@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPublicProfile } from "@/lib/user";
 import { getLatestPosts } from "@/lib/posts";
 import Image from "next/image";
