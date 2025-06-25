@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { db } from '@/lib/db';
-import bcrypt from 'bcryptjs';
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 // GET user settings
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   try {
@@ -17,12 +17,12 @@ export async function GET() {
     const client = await db.connect();
     try {
       const result = await client.query(
-        'SELECT username, name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, connections, show_attribution FROM users WHERE id = $1',
-        [userId]
+        "SELECT username, name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, connections, show_attribution FROM users WHERE id = $1",
+        [userId],
       );
 
       if (result.rows.length === 0) {
-        return NextResponse.json({ error: 'user not found' }, { status: 404 });
+        return NextResponse.json({ error: "user not found" }, { status: 404 });
       }
 
       return NextResponse.json(result.rows[0]);
@@ -30,8 +30,11 @@ export async function GET() {
       client.release();
     }
   } catch (error) {
-    console.error('failed to fetch settings:', error);
-    return NextResponse.json({ error: 'internal server error' }, { status: 500 });
+    console.error("failed to fetch settings:", error);
+    return NextResponse.json(
+      { error: "internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -39,7 +42,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   try {
@@ -64,9 +67,12 @@ export async function PUT(req: Request) {
     const client = await db.connect();
     try {
       // fetch current user data for validation
-      const currentUser = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+      const currentUser = await client.query(
+        "SELECT * FROM users WHERE id = $1",
+        [userId],
+      );
       if (currentUser.rows.length === 0) {
-        return NextResponse.json({ error: 'user not found' }, { status: 404 });
+        return NextResponse.json({ error: "user not found" }, { status: 404 });
       }
 
       const user = currentUser.rows[0];
@@ -75,20 +81,35 @@ export async function PUT(req: Request) {
       // handle password change
       if (newPassword) {
         if (!currentPassword) {
-          return NextResponse.json({ error: 'current password is required to set a new password' }, { status: 400 });
+          return NextResponse.json(
+            { error: "current password is required to set a new password" },
+            { status: 400 },
+          );
         }
-        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        const isPasswordValid = await bcrypt.compare(
+          currentPassword,
+          user.password,
+        );
         if (!isPasswordValid) {
-          return NextResponse.json({ error: 'invalid current password' }, { status: 401 });
+          return NextResponse.json(
+            { error: "invalid current password" },
+            { status: 401 },
+          );
         }
         hashedPassword = await bcrypt.hash(newPassword, 10);
       }
 
       // handle username change
       if (username && username !== user.username) {
-        const existingUser = await client.query('SELECT id FROM users WHERE username = $1 AND id != $2', [username, userId]);
+        const existingUser = await client.query(
+          "SELECT id FROM users WHERE username = $1 AND id != $2",
+          [username, userId],
+        );
         if (existingUser.rows.length > 0) {
-          return NextResponse.json({ error: 'username is already taken' }, { status: 409 });
+          return NextResponse.json(
+            { error: "username is already taken" },
+            { status: 409 },
+          );
         }
       }
 
@@ -108,7 +129,7 @@ export async function PUT(req: Request) {
 
       const setClauses = Object.keys(updates)
         .map((key, index) => `"${key}" = $${index + 1}`)
-        .join(', ');
+        .join(", ");
 
       const values = Object.values(updates);
 
@@ -126,10 +147,19 @@ export async function PUT(req: Request) {
       client.release();
     }
   } catch (error) {
-    console.error('failed to update settings:', error);
-    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
-      return NextResponse.json({ error: 'username is already taken' }, { status: 409 });
+    console.error("failed to update settings:", error);
+    if (
+      error instanceof Error &&
+      error.message.includes("duplicate key value violates unique constraint")
+    ) {
+      return NextResponse.json(
+        { error: "username is already taken" },
+        { status: 409 },
+      );
     }
-    return NextResponse.json({ error: 'internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: "internal server error" },
+      { status: 500 },
+    );
   }
 }

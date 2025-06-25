@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface MarkdownRendererProps {
   children: string;
@@ -11,17 +11,17 @@ interface MarkdownRendererProps {
 
 const MarkdownRenderer = ({ children }: MarkdownRendererProps) => {
   const components = {
-    code({ 
-      inline, 
-      className, 
-      children, 
-      ...props 
+    code({
+      inline,
+      className,
+      children,
+      ...props
     }: {
       inline?: boolean;
       className?: string;
       children: React.ReactNode;
     }) {
-      const match = /language-(\w+)/.exec(className || '');
+      const match = /language-(\w+)/.exec(className || "");
       return !inline && match ? (
         <SyntaxHighlighter
           style={oneDark}
@@ -29,7 +29,7 @@ const MarkdownRenderer = ({ children }: MarkdownRendererProps) => {
           PreTag="div"
           {...props}
         >
-          {String(children).replace(/\n$/, '')}
+          {String(children).replace(/\n$/, "")}
         </SyntaxHighlighter>
       ) : (
         <code className={className} {...props}>

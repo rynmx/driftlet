@@ -1,39 +1,39 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
-import Header from '@/components/Header';
-import AuthProvider from '@/components/AuthProvider';
-import Footer from '@/components/Footer';
-import { getPublicProfile } from '@/lib/user';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import Header from "@/components/Header";
+import AuthProvider from "@/components/AuthProvider";
+import Footer from "@/components/Footer";
+import { getPublicProfile } from "@/lib/user";
 
 const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
   const profile = await getPublicProfile();
 
-  const title = profile?.name || 'driftlet';
-  const description = profile?.bio || 'a minimalist blog and portfolio';
+  const siteName = profile?.header_text || "driftlet";
+  const description = profile?.bio || "a minimalist blog and portfolio";
 
   return {
     title: {
-      template: `%s | ${profile?.name || 'driftlet'} `,
-      default: title,
+      template: `%s • ${siteName}`,
+      default: `${siteName || "driftlet"}`,
     },
     description,
   };
 }
 
-export default async function RootLayout({ 
+export default async function RootLayout({
   children,
-}: Readonly<{ 
+}: Readonly<{
   children: React.ReactNode;
 }>) {
   const profile = await getPublicProfile();

@@ -1,7 +1,7 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { getPublicProfile } from '@/lib/user';
-import AuthNavLinks from './AuthNavLinks';
+import Link from "next/link";
+import Image from "next/image";
+import { getPublicProfile } from "@/lib/user";
+import AuthNavLinks from "./AuthNavLinks";
 
 const Header = async () => {
   const profile = await getPublicProfile();
@@ -21,15 +21,21 @@ const Header = async () => {
               />
             )}
             <span className="text-lg font-bold text-black dark:text-white">
-              {profile?.header_text || 'driftlet'}
+              {profile?.header_text || "driftlet"}
             </span>
           </Link>
         </div>
         <nav className="flex items-center space-x-4">
-          <Link href="/" className="font-medium text-black dark:text-white hover:underline">
+          <Link
+            href="/"
+            className="font-medium text-black dark:text-white hover:underline"
+          >
             home
           </Link>
-          <Link href="/blog" className="font-medium text-black dark:text-white hover:underline">
+          <Link
+            href="/blog"
+            className="font-medium text-black dark:text-white hover:underline"
+          >
             blog
           </Link>
           <AuthNavLinks />

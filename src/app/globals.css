@@ -32,17 +32,47 @@ body {
   color: var(--foreground);
 }
 
-.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
   font-weight: 700;
   color: var(--foreground);
 }
 
-.prose h1 { font-size: 2.25rem; line-height: 2.5rem; margin-bottom: 1.5rem; margin-top: 2rem; }
-.prose h2 { font-size: 1.875rem; line-height: 2.25rem; margin-bottom: 1.25rem; margin-top: 1.75rem; }
-.prose h3 { font-size: 1.5rem; line-height: 2rem; margin-bottom: 1rem; margin-top: 1.5rem; }
-.prose h4 { font-size: 1.25rem; line-height: 1.75rem; margin-bottom: 0.75rem; margin-top: 1.25rem; }
+.prose h1 {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+  margin-bottom: 1.5rem;
+  margin-top: 2rem;
+}
+.prose h2 {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  margin-bottom: 1.25rem;
+  margin-top: 1.75rem;
+}
+.prose h3 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+}
+.prose h4 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  margin-bottom: 0.75rem;
+  margin-top: 1.25rem;
+}
 
-.prose p, .prose ul, .prose ol, .prose blockquote, .prose pre, .prose table {
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre,
+.prose table {
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
@@ -74,7 +104,9 @@ body {
   padding-left: 1.5rem;
 }
 
-.prose li > p, .prose li > ul, .prose li > ol {
+.prose li > p,
+.prose li > ul,
+.prose li > ol {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
@@ -124,7 +156,8 @@ body {
   border-collapse: collapse;
 }
 
-.prose th, .prose td {
+.prose th,
+.prose td {
   border: 1px solid #d1d5db;
   padding: 0.5rem 1rem;
 }
@@ -163,7 +196,8 @@ body {
     background-color: #1f2937;
   }
 
-  .prose th, .prose td {
+  .prose th,
+  .prose td {
     border-color: #4b5563;
   }
 
@@ -171,5 +205,3 @@ body {
     background-color: #1f2937;
   }
 }
-
-

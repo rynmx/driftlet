@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import Image from "next/image";
 
 const ProfileCard = () => {
   return (
@@ -13,7 +13,9 @@ const ProfileCard = () => {
         />
       </div>
       <div className="flex flex-col text-center sm:text-left">
-        <h1 className="text-2xl font-bold text-black dark:text-white">ryana may que</h1>
+        <h1 className="text-2xl font-bold text-black dark:text-white">
+          ryana may que
+        </h1>
         <p className="mt-2 text-black dark:text-gray-400">
           with all the ai stuff going around, i&apos;m going back to basics
         </p>

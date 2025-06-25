@@ -1,17 +1,17 @@
-import { config } from 'dotenv';
-import { db } from '@/lib/db';
+import { config } from "dotenv";
+import { db } from "@/lib/db";
 
 // Load environment variables from .env.local
-config({ path: '.env.local' });
+config({ path: ".env.local" });
 
 async function main() {
-  console.log('starting database initialization...');
+  console.log("starting database initialization...");
   const client = await db.connect();
 
   try {
     // Enable UUID generation
     await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
-    console.log('uuid-ossp extension enabled.');
+    console.log("uuid-ossp extension enabled.");
 
     // Create users table
     await client.query(`
@@ -54,14 +54,13 @@ async function main() {
       await client.query(statement);
     }
     console.log('"users" table altered successfully.');
-
   } catch (error) {
-    console.error('error initializing database:', error);
+    console.error("error initializing database:", error);
     process.exit(1);
   } finally {
     client.release();
     await db.end();
-    console.log('database initialization complete.');
+    console.log("database initialization complete.");
   }
 }
 

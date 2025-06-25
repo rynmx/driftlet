@@ -3,7 +3,7 @@ services:
     build: .
     restart: always
     ports:
-      - '3000:3000'
+      - "3000:3000"
     depends_on:
       - db
     env_file:
@@ -21,7 +21,7 @@ services:
       - POSTGRES_DB=${DATABASE_NAME}
     ports:
       # Expose the port to the host machine for local development/debugging and running scripts
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

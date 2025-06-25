@@ -1,15 +1,15 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { db } from '@/lib/db';
-import bcrypt from 'bcryptjs';
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        username: { label: 'username', type: 'text' },
-        password: { label: 'password', type: 'password' },
+        username: { label: "username", type: "text" },
+        password: { label: "password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials) {
@@ -18,16 +18,22 @@ export const authOptions: NextAuthOptions = {
 
         const client = await db.connect();
         try {
-          const result = await client.query('SELECT * FROM users WHERE username = $1', [credentials.username]);
+          const result = await client.query(
+            "SELECT * FROM users WHERE username = $1",
+            [credentials.username],
+          );
           const user = result.rows[0];
 
-          if (user && (await bcrypt.compare(credentials.password, user.password))) {
+          if (
+            user &&
+            (await bcrypt.compare(credentials.password, user.password))
+          ) {
             return { id: user.id, name: user.username, email: user.email };
           } else {
             return null;
           }
         } catch (error) {
-          console.error('Authorize error:', error);
+          console.error("Authorize error:", error);
           return null;
         } finally {
           client.release();
@@ -36,7 +42,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -55,7 +61,7 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
 };
 

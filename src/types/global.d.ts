@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 declare global {
   // This allows us to use a global variable for the database pool in development
