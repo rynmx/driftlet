@@ -26,7 +26,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy the standalone Next.js server output from the builder stage
-COPY --from=builder /app/.next/standalone ./ 
+COPY --from=builder /app/.next/standalone ./
+
+# Copy the public directory
+COPY --from=builder /app/public ./public
+
+# Copy the static assets
+COPY --from=builder /app/.next/static ./.next/static 
 
 # Copy the public directory
 COPY --from=builder /app/public ./public
