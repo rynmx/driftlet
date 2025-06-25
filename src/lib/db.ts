@@ -32,3 +32,19 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export const db = pool;
+
+export async function isDatabaseInitialized() {
+  const client = await db.connect();
+  try {
+    const res = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      );
+    `);
+    return res.rows[0].exists;
+  } finally {
+    client.release();
+  }
+}
