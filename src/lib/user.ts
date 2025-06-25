@@ -7,7 +7,7 @@ export interface PublicProfile {
   profile_picture_url: string | null;
   header_text: string | null;
   header_icon_link: string | null;
-  connections: Record<string, string> | null;
+  links: Record<string, string> | null;
   show_attribution: boolean | null;
 }
 
@@ -17,7 +17,7 @@ export async function getPublicProfile(): Promise<PublicProfile | null> {
   const client = await db.connect();
   try {
     const result = await client.query(
-      "SELECT name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, connections, show_attribution FROM users LIMIT 1",
+      "SELECT name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, links, show_attribution FROM users LIMIT 1",
     );
 
     if (result.rows.length === 0) {

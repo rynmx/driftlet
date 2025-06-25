@@ -16,7 +16,7 @@ export async function GET() {
     const client = await db.connect();
     try {
       const result = await client.query(
-        "SELECT username, name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, connections, show_attribution FROM users WHERE id = $1",
+        "SELECT username, name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, links, show_attribution FROM users WHERE id = $1",
         [userId],
       );
 
@@ -53,7 +53,7 @@ export async function PUT(req: Request) {
       profile_picture_url,
       header_text,
       header_icon_link,
-      connections,
+      links,
       show_attribution,
       username,
       currentPassword,
@@ -119,7 +119,7 @@ export async function PUT(req: Request) {
         profile_picture_url,
         header_text,
         header_icon_link,
-        connections: JSON.stringify(connections),
+        links: JSON.stringify(links),
         show_attribution,
         username,
         password: hashedPassword,

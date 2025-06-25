@@ -46,7 +46,7 @@ async function main() {
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_url TEXT;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS header_text TEXT DEFAULT 'driftlet';`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS header_icon_link TEXT;`,
-      `ALTER TABLE users ADD COLUMN IF NOT EXISTS connections JSONB;`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS links JSONB;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS show_attribution BOOLEAN DEFAULT true;`,
     ];
 

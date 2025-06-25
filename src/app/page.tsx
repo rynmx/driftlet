@@ -72,14 +72,14 @@ export default async function Home() {
         )}
 
         {/* Connections Section */}
-        {profile.connections && Object.keys(profile.connections).length > 0 && (
+        {profile.links && Object.keys(profile.links).length > 0 && (
           <div>
             <h2 className="text-xl font-bold text-black dark:text-white">
-              connections
+              links
             </h2>
             <hr className="my-2 border-gray-200 dark:border-gray-700" />
             <div className="flex flex-wrap gap-x-4 gap-y-2">
-              {Object.entries(profile.connections).map(([key, value]) => (
+              {Object.entries(profile.links).map(([key, value]) => (
                 <Link
                   key={key}
                   href={value}

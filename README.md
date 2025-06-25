@@ -5,6 +5,7 @@ a minimalist, modern, and performant blogging and portfolio platform.
 **note**: this is a very early-stage project. things may be broken or incomplete.
 
 ## roadmap for 1.0
+
 - [x] create/edit/delete posts
 - [x] basic account stuff
 - [x] basic home page stuff

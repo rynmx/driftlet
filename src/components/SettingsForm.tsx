@@ -13,7 +13,7 @@ interface UserSettings {
   profile_picture_url: string | null;
   header_text: string | null;
   header_icon_link: string | null;
-  connections: Record<string, string>;
+  links: Record<string, string>;
   show_attribution: boolean;
 }
 
@@ -27,7 +27,7 @@ const SettingsForm = () => {
   });
 
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [connectionsStr, setConnectionsStr] = useState("");
+  const [linksStr, setLinksStr] = useState("");
   const [username, setUsername] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -47,7 +47,7 @@ const SettingsForm = () => {
         const data = await response.json();
         setSettings(data);
         setUsername(data.username || "");
-        setConnectionsStr(JSON.stringify(data.connections || {}, null, 2));
+        setLinksStr(JSON.stringify(data.links || {}, null, 2));
       } else {
         setError("failed to fetch settings.");
       }
@@ -61,11 +61,11 @@ const SettingsForm = () => {
     setError("");
     setSuccessMessage("");
 
-    let parsedConnections;
+    let parsedLinks;
     try {
-      parsedConnections = JSON.parse(connectionsStr);
+      parsedLinks = JSON.parse(linksStr);
     } catch {
-      setError("connections field contains invalid json.");
+      setError("links field contains invalid json.");
       setIsSubmitting(false);
       return;
     }
@@ -78,7 +78,7 @@ const SettingsForm = () => {
 
     const payload = {
       ...settings,
-      connections: parsedConnections,
+      links: parsedLinks,
       username,
       ...(newPassword && { currentPassword, newPassword }),
     };
@@ -205,11 +205,11 @@ const SettingsForm = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                connections (json)
+                links (json)
               </label>
               <textarea
-                value={connectionsStr}
-                onChange={(e) => setConnectionsStr(e.target.value)}
+                value={linksStr}
+                onChange={(e) => setLinksStr(e.target.value)}
                 placeholder='{
   "github": "https://github.com/username",
   "twitter": "https://twitter.com/username"
