@@ -7,7 +7,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-export async function generateMetadata({ params: { slug } }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await paramsPromise;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -30,7 +31,8 @@ export async function generateStaticParams() {
   }));
 }
 
-export default async function BlogPostPage({ params: { slug } }: { params: { slug: string } }) {
+export default async function BlogPostPage({ params: paramsPromise }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await paramsPromise;
   const post = await getPostBySlug(slug);
   const session = await getServerSession(authOptions);
 

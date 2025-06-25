@@ -7,8 +7,9 @@ import { getPostBySlug } from '@/lib/posts';
 // GET a single post by slug
 export async function GET(
   req: Request,
-  { params: { slug } }: { params: { slug: string } }
+  { params: paramsPromise }: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await paramsPromise;
   try {
     const post = await getPostBySlug(slug);
     if (!post) {
@@ -24,8 +25,9 @@ export async function GET(
 // PUT (update) a post
 export async function PUT(
   req: Request,
-  { params: { slug: oldSlug } }: { params: { slug: string } }
+  { params: paramsPromise }: { params: Promise<{ slug: string }> }
 ) {
+  const { slug: oldSlug } = await paramsPromise;
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -71,8 +73,9 @@ export async function PUT(
 // DELETE a post
 export async function DELETE(
   req: Request,
-  { params: { slug } }: { params: { slug: string } }
+  { params: paramsPromise }: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await paramsPromise;
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });

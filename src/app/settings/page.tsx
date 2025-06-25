@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import zxcvbn from 'zxcvbn';
 import { useRouter } from 'next/navigation';
 
 interface UserSettings {
+  username: string;
   name: string | null;
   bio: string | null;
   extended_bio: string | null;
@@ -26,6 +28,11 @@ const SettingsPage = () => {
 
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [connectionsStr, setConnectionsStr] = useState('');
+  const [username, setUsername] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: '' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -40,6 +47,7 @@ const SettingsPage = () => {
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
+        setUsername(data.username || '');
         setConnectionsStr(JSON.stringify(data.connections || {}, null, 2));
       } else {
         setError('failed to fetch settings.');
@@ -63,11 +71,24 @@ const SettingsPage = () => {
       return;
     }
 
+    if (newPassword && newPassword !== confirmPassword) {
+      setError('new passwords do not match.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      ...settings,
+      connections: parsedConnections,
+      username,
+      ...(newPassword && { currentPassword, newPassword }),
+    };
+
     try {
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...settings, connections: parsedConnections }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -129,6 +150,48 @@ const SettingsPage = () => {
   "github": "https://github.com/username",
   "twitter": "https://twitter.com/username"
 }' className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white min-h-[150px] w-full font-mono text-sm" />
+            </div>
+          </fieldset>
+
+          <fieldset className="flex flex-col gap-4 border border-black dark:border-gray-700 p-4">
+            <legend className="text-lg font-semibold px-2 text-black dark:text-white">account</legend>
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">username</label>
+              <input id="username" type="text" name="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="your username" className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full" />
+            </div>
+            <div>
+              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">current password</label>
+              <input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="required to change password" className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full" />
+            </div>
+            <div>
+              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">new password</label>
+              <input id="newPassword" type="password" value={newPassword} onChange={(e) => {
+                const password = e.target.value;
+                setNewPassword(password);
+                if (password) {
+                  const result = zxcvbn(password);
+                  setPasswordStrength({ score: result.score, feedback: result.feedback.suggestions[0] || 'Strong' });
+                } else {
+                  setPasswordStrength({ score: 0, feedback: '' });
+                }
+              }} placeholder="leave blank to keep current" className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full" />
+              {newPassword && (
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full ${
+                        ['bg-red-500', 'bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'][passwordStrength.score]
+                      }`}
+                      style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs mt-1 text-gray-600 dark:text-gray-400">{passwordStrength.feedback}</p>
+                </div>
+              )}
+            </div>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">confirm new password</label>
+              <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="confirm new password" className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full" />
             </div>
           </fieldset>
 

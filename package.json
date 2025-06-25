@@ -19,7 +19,8 @@
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,6 +31,7 @@
     "@types/pg": "^8.15.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/zxcvbn": "^4.4.5",
     "dotenv": "^16.5.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",

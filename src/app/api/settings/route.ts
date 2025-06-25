@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { db } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 // GET user settings
 export async function GET() {
@@ -16,7 +17,7 @@ export async function GET() {
     const client = await db.connect();
     try {
       const result = await client.query(
-        'SELECT name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, connections, show_attribution FROM users WHERE id = $1',
+        'SELECT username, name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, connections, show_attribution FROM users WHERE id = $1',
         [userId]
       );
 
@@ -52,6 +53,9 @@ export async function PUT(req: Request) {
       header_icon_link,
       connections,
       show_attribution,
+      username,
+      currentPassword,
+      newPassword,
     } = body;
 
     // @ts-expect-error -- session.user.id is added in the auth callback
@@ -59,36 +63,73 @@ export async function PUT(req: Request) {
 
     const client = await db.connect();
     try {
-      const result = await client.query(
-        `UPDATE users SET 
-          name = $1, 
-          bio = $2, 
-          extended_bio = $3, 
-          profile_picture_url = $4, 
-          header_text = $5, 
-          header_icon_link = $6, 
-          connections = $7,
-          show_attribution = $8
-        WHERE id = $9 RETURNING *`,
-        [
-          name,
-          bio,
-          extended_bio,
-          profile_picture_url,
-          header_text,
-          header_icon_link,
-          JSON.stringify(connections), // Ensure connections are stored as a JSON string
-          show_attribution,
-          userId,
-        ]
-      );
+      // fetch current user data for validation
+      const currentUser = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+      if (currentUser.rows.length === 0) {
+        return NextResponse.json({ error: 'user not found' }, { status: 404 });
+      }
 
-      return NextResponse.json(result.rows[0]);
+      const user = currentUser.rows[0];
+      let hashedPassword = user.password;
+
+      // handle password change
+      if (newPassword) {
+        if (!currentPassword) {
+          return NextResponse.json({ error: 'current password is required to set a new password' }, { status: 400 });
+        }
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+          return NextResponse.json({ error: 'invalid current password' }, { status: 401 });
+        }
+        hashedPassword = await bcrypt.hash(newPassword, 10);
+      }
+
+      // handle username change
+      if (username && username !== user.username) {
+        const existingUser = await client.query('SELECT id FROM users WHERE username = $1 AND id != $2', [username, userId]);
+        if (existingUser.rows.length > 0) {
+          return NextResponse.json({ error: 'username is already taken' }, { status: 409 });
+        }
+      }
+
+      // dynamically build the update query
+      const updates: { [key: string]: string | boolean | null } = {
+        name,
+        bio,
+        extended_bio,
+        profile_picture_url,
+        header_text,
+        header_icon_link,
+        connections: JSON.stringify(connections),
+        show_attribution,
+        username,
+        password: hashedPassword,
+      };
+
+      const setClauses = Object.keys(updates)
+        .map((key, index) => `"${key}" = $${index + 1}`)
+        .join(', ');
+
+      const values = Object.values(updates);
+
+      const query = `UPDATE users SET ${setClauses} WHERE id = $${values.length + 1} RETURNING *`;
+      values.push(userId);
+
+      const result = await client.query(query, values);
+
+      // remove password from the returned object
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...updatedUser } = result.rows[0];
+
+      return NextResponse.json(updatedUser);
     } finally {
       client.release();
     }
   } catch (error) {
     console.error('failed to update settings:', error);
+    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
+      return NextResponse.json({ error: 'username is already taken' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'internal server error' }, { status: 500 });
   }
 }
