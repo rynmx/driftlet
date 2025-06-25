@@ -3,8 +3,7 @@ import { getPublicProfile } from '@/lib/user';
 import { getLatestPosts } from '@/lib/posts';
 import Image from 'next/image';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { FiArrowUpRight } from 'react-icons/fi';
 
 
@@ -55,10 +54,8 @@ export default async function Home() {
           <div>
             <h2 className="text-xl font-bold text-black dark:text-white">about</h2>
             <hr className="my-2 border-gray-200 dark:border-gray-700" />
-            <article className="prose dark:prose-invert max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {profile.extended_bio}
-              </ReactMarkdown>
+                        <article className="prose dark:prose-invert max-w-none">
+              <MarkdownRenderer>{profile.extended_bio}</MarkdownRenderer>
             </article>
           </div>
         )}

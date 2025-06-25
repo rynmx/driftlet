@@ -1,5 +1,4 @@
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { getPostBySlug, getPosts } from '@/lib/posts';
 import { notFound } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
@@ -61,8 +60,8 @@ export default async function BlogPostPage({ params: paramsPromise }: { params: 
             </Link>
           )}
         </div>
-        <div className="prose dark:prose-invert max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+                <div className="prose dark:prose-invert max-w-none">
+          <MarkdownRenderer>{post.content}</MarkdownRenderer>
         </div>
       </article>
     </main>
