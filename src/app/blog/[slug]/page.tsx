@@ -1,5 +1,5 @@
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import { getPostBySlug, getPosts } from "@/lib/posts";
+import { getPostBySlug } from "@/lib/posts";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -24,14 +24,6 @@ export async function generateMetadata({
     title: post.title,
     description: post.content.substring(0, 160),
   };
-}
-
-// This function tells Next.js which slugs are available at build time.
-export async function generateStaticParams() {
-  const posts = await getPosts();
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
 }
 
 export default async function BlogPostPage({
