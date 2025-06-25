@@ -34,9 +34,6 @@ COPY --from=builder /app/public ./public
 # Copy the static assets
 COPY --from=builder /app/.next/static ./.next/static 
 
-# Copy the public directory
-COPY --from=builder /app/public ./public
-
 # Expose the port the app runs on
 EXPOSE 3000
 

@@ -10,14 +10,10 @@ let pool: Pool;
 // Centralized configuration for the database pool.
 const config: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
-  // Conditionally add SSL configuration for production environments,
-  // but only if the database is not on localhost.
-  ...(process.env.NODE_ENV === "production" &&
-    !process.env.DATABASE_URL?.includes("localhost") && {
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    }),
+  ssl:
+    process.env.POSTGRES_SSL_ENABLED === "true"
+      ? { rejectUnauthorized: false } // Required for platforms like Railway
+      : undefined,
 };
 
 if (process.env.NODE_ENV === "production") {

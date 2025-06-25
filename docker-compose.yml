@@ -7,10 +7,11 @@ services:
     depends_on:
       - db
     env_file:
-      - .env.local
+      - .env
     environment:
-      # Override the database host to use the service name 'db' from within the Docker network
       DATABASE_URL: "postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@db:5432/${DATABASE_NAME}"
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      POSTGRES_SSL_ENABLED: "false"
 
   db:
     image: postgres:16-alpine
@@ -20,7 +21,6 @@ services:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - POSTGRES_DB=${DATABASE_NAME}
     ports:
-      # Expose the port to the host machine for local development/debugging and running scripts
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
