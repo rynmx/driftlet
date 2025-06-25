@@ -2,6 +2,8 @@
 
 a minimalist, modern, and performant blogging and portfolio platform.
 
+[Live Demo](https://ryanaque.com)
+
 **note**: this is a very early-stage project. things may be broken or incomplete.
 
 ## roadmap for 1.0
