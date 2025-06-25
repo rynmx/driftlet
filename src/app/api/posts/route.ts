@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
@@ -20,7 +20,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // @ts-expect-error -- session.user.id is added in the auth callback
     const userId = session.user.id;
 
     const client = await db.connect();

@@ -2,7 +2,7 @@ import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { getPostBySlug, getPosts } from "@/lib/posts";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -47,7 +47,6 @@ export default async function BlogPostPage({
     notFound();
   }
 
-  // @ts-expect-error -- session.user.id is added in the auth callback
   const isAuthor = session?.user?.id === post.author_id;
 
   return (

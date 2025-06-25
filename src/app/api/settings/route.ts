@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
@@ -12,7 +12,6 @@ export async function GET() {
   }
 
   try {
-    // @ts-expect-error -- session.user.id is added in the auth callback
     const userId = session.user.id;
     const client = await db.connect();
     try {
@@ -61,7 +60,6 @@ export async function PUT(req: Request) {
       newPassword,
     } = body;
 
-    // @ts-expect-error -- session.user.id is added in the auth callback
     const userId = session.user.id;
 
     const client = await db.connect();

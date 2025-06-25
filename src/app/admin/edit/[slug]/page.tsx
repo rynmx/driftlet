@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getPostBySlug } from "@/lib/posts";
 import EditPostForm from "@/components/EditPostForm";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function generateMetadata({
   params: paramsPromise,
@@ -40,7 +40,6 @@ const EditPostPage = async ({
     notFound();
   }
 
-  // @ts-expect-error -- session.user.id is added in the auth callback
   if (session.user.id !== post.author_id) {
     // Not authorized to edit this post
     notFound();
