@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --write .",
     "db:init": "tsx --require dotenv/config src/scripts/init-db.ts",
     "db:seed": "tsx --require dotenv/config src/scripts/seed-db.ts",
     "db:reset": "tsx --require dotenv/config src/scripts/reset-db.ts",
