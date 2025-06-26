@@ -19,7 +19,7 @@ a minimalist, modern, and performant blogging and portfolio platform.
 
 ## deploying
 
-[![deploy on railway](https://railway.com/button.svg)](https://railway.com/deploy/so6ODq?referralCode=RjkrHM)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Rma_dC?referralCode=RjkrHM)
 
 this project uses docker. run `docker-compose up -d` to pull the latest image from [docker hub](https://hub.docker.com/r/rynmx/driftlet) and start the app.
 
