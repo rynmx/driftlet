@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
-// GET user settings
+// GET all settings (user and site)
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
@@ -15,16 +15,35 @@ export async function GET() {
     const userId = session.user.id;
     const client = await db.connect();
     try {
-      const result = await client.query(
-        "SELECT username, name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, links, show_attribution FROM users WHERE id = $1",
+      // Fetch user-specific settings
+      const userResult = await client.query(
+        "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon FROM users WHERE id = $1",
         [userId],
       );
 
-      if (result.rows.length === 0) {
+      if (userResult.rows.length === 0) {
         return NextResponse.json({ error: "user not found" }, { status: 404 });
       }
 
-      return NextResponse.json(result.rows[0]);
+      // Fetch site-wide settings
+      const siteSettingsResult = await client.query(
+        "SELECT favicon_url, show_attribution FROM settings WHERE id = 1",
+      );
+
+      if (siteSettingsResult.rows.length === 0) {
+        // This case should ideally not happen if seeding is correct
+        return NextResponse.json(
+          { error: "site settings not found" },
+          { status: 404 },
+        );
+      }
+
+      const combinedSettings = {
+        ...userResult.rows[0],
+        ...siteSettingsResult.rows[0],
+      };
+
+      return NextResponse.json(combinedSettings);
     } finally {
       client.release();
     }
@@ -37,114 +56,135 @@ export async function GET() {
   }
 }
 
-// PUT (update) user settings
-export async function PUT(req: Request) {
+// PATCH (update) settings
+export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const client = await db.connect();
   try {
     const body = await req.json();
-    const {
-      name,
-      bio,
-      extended_bio,
-      profile_picture_url,
-      header_text,
-      header_icon_link,
-      links,
-      show_attribution,
-      username,
-      currentPassword,
-      newPassword,
-    } = body;
-
     const userId = session.user.id;
 
-    const client = await db.connect();
-    try {
-      // fetch current user data for validation
-      const currentUser = await client.query(
+    await client.query("BEGIN");
+
+    // Separate keys for user and settings tables
+    const userKeys = [
+      "name",
+      "bio",
+      "extended_bio",
+      "profile_picture_url",
+      "links",
+      "header_text",
+      "header_icon_url",
+      "show_header_icon",
+    ];
+    const settingsKeys = ["favicon_url", "show_attribution"];
+
+    const userUpdates: { [key: string]: string | boolean | object | null } = {};
+    const settingsUpdates: { [key: string]: string | boolean | object | null } =
+      {};
+
+    for (const key in body) {
+      if (userKeys.includes(key)) {
+        userUpdates[key] = body[key];
+      } else if (settingsKeys.includes(key)) {
+        settingsUpdates[key] = body[key];
+      }
+    }
+
+    // Handle user-specific updates
+    if (Object.keys(userUpdates).length > 0) {
+      const setClauses = Object.keys(userUpdates)
+        .map((key, i) => `"${key}" = $${i + 1}`)
+        .join(", ");
+      const values = Object.values(userUpdates);
+      await client.query(
+        `UPDATE users SET ${setClauses} WHERE id = $${values.length + 1}`,
+        [...values, userId],
+      );
+    }
+
+    // Handle site-wide settings updates
+    if (Object.keys(settingsUpdates).length > 0) {
+      const setClauses = Object.keys(settingsUpdates)
+        .map((key, i) => `"${key}" = $${i + 1}`)
+        .join(", ");
+      const values = Object.values(settingsUpdates);
+      await client.query(
+        `UPDATE settings SET ${setClauses} WHERE id = 1`,
+        values,
+      );
+    }
+
+    // Handle password and username changes
+    const { username, newPassword, currentPassword } = body;
+    if (newPassword || (username && username !== session.user.name)) {
+      const currentUserResult = await client.query(
         "SELECT * FROM users WHERE id = $1",
         [userId],
       );
-      if (currentUser.rows.length === 0) {
-        return NextResponse.json({ error: "user not found" }, { status: 404 });
-      }
+      const user = currentUserResult.rows[0];
 
-      const user = currentUser.rows[0];
       let hashedPassword = user.password;
-
-      // handle password change
       if (newPassword) {
-        if (!currentPassword) {
-          return NextResponse.json(
-            { error: "current password is required to set a new password" },
-            { status: 400 },
-          );
-        }
-        const isPasswordValid = await bcrypt.compare(
-          currentPassword,
-          user.password,
-        );
-        if (!isPasswordValid) {
+        if (
+          !currentPassword ||
+          !bcrypt.compareSync(currentPassword, user.password)
+        ) {
+          await client.query("ROLLBACK");
           return NextResponse.json(
             { error: "invalid current password" },
             { status: 401 },
           );
         }
         hashedPassword = await bcrypt.hash(newPassword, 10);
+        await client.query("UPDATE users SET password = $1 WHERE id = $2", [
+          hashedPassword,
+          userId,
+        ]);
       }
 
-      // handle username change
       if (username && username !== user.username) {
         const existingUser = await client.query(
           "SELECT id FROM users WHERE username = $1 AND id != $2",
           [username, userId],
         );
         if (existingUser.rows.length > 0) {
+          await client.query("ROLLBACK");
           return NextResponse.json(
             { error: "username is already taken" },
             { status: 409 },
           );
         }
+        await client.query("UPDATE users SET username = $1 WHERE id = $2", [
+          username,
+          userId,
+        ]);
       }
-
-      // dynamically build the update query
-      const updates: { [key: string]: string | boolean | null } = {
-        name,
-        bio,
-        extended_bio,
-        profile_picture_url,
-        header_text,
-        header_icon_link,
-        links: JSON.stringify(links),
-        show_attribution,
-        username,
-        password: hashedPassword,
-      };
-
-      const setClauses = Object.keys(updates)
-        .map((key, index) => `"${key}" = $${index + 1}`)
-        .join(", ");
-
-      const values = Object.values(updates);
-
-      const query = `UPDATE users SET ${setClauses} WHERE id = $${values.length + 1} RETURNING *`;
-      values.push(userId);
-
-      const result = await client.query(query, values);
-
-      // remove password from the returned object
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...updatedUser } = result.rows[0];
-
-      return NextResponse.json(updatedUser);
-    } finally {
-      client.release();
     }
+
+    await client.query("COMMIT");
+
+    // Fetch the newly updated combined settings to return
+    const updatedUserResult = await client.query(
+      "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon FROM users WHERE id = $1",
+      [userId],
+    );
+    const updatedSiteSettingsResult = await client.query(
+      "SELECT favicon_url, show_attribution FROM settings WHERE id = 1",
+    );
+
+    const combinedSettings = {
+      ...updatedUserResult.rows[0],
+      ...updatedSiteSettingsResult.rows[0],
+    };
+
+    return NextResponse.json(combinedSettings);
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("failed to update settings:", error);
     if (
       error instanceof Error &&
@@ -159,5 +199,7 @@ export async function PUT(req: Request) {
       { error: "internal server error" },
       { status: 500 },
     );
+  } finally {
+    client.release();
   }
 }

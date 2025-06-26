@@ -5,26 +5,41 @@ export interface PublicProfile {
   bio: string | null;
   extended_bio: string | null;
   profile_picture_url: string | null;
-  header_text: string | null;
-  header_icon_link: string | null;
   links: Record<string, string> | null;
+  // User-specific site settings
+  header_text: string | null;
+  header_icon_url: string | null;
+  show_header_icon: boolean | null;
+  // Global site settings
+  favicon_url: string | null;
   show_attribution: boolean | null;
 }
 
-// For this single-user portfolio, we'll just grab the first user.
+// For this single-user portfolio, we'll just grab the first user and the site settings.
 // In a multi-user system, you'd identify the site owner differently.
 export async function getPublicProfile(): Promise<PublicProfile | null> {
   const client = await db.connect();
   try {
-    const result = await client.query(
-      "SELECT name, bio, extended_bio, profile_picture_url, header_text, header_icon_link, links, show_attribution FROM users LIMIT 1",
+    // Fetch user-specific settings
+    const userResult = await client.query(
+      "SELECT name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon FROM users LIMIT 1",
     );
 
-    if (result.rows.length === 0) {
+    // Fetch site-wide settings
+    const siteSettingsResult = await client.query(
+      "SELECT favicon_url, show_attribution FROM settings WHERE id = 1",
+    );
+
+    if (userResult.rows.length === 0 || siteSettingsResult.rows.length === 0) {
       return null;
     }
 
-    return result.rows[0];
+    const combinedProfile = {
+      ...userResult.rows[0],
+      ...siteSettingsResult.rows[0],
+    };
+
+    return combinedProfile;
   } catch (error) {
     console.error("failed to fetch public profile:", error);
     // Return null on error to allow the page to render gracefully

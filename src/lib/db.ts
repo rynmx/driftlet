@@ -32,14 +32,23 @@ export const db = pool;
 export async function isDatabaseInitialized() {
   const client = await db.connect();
   try {
-    const res = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'users'
+    const requiredTables = ["users", "posts", "settings"];
+    for (const table of requiredTables) {
+      const res = await client.query(
+        `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        );
+      `,
+        [table],
       );
-    `);
-    return res.rows[0].exists;
+      if (!res.rows[0].exists) {
+        return false;
+      }
+    }
+    return true;
   } finally {
     client.release();
   }

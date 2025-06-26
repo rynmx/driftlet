@@ -31,20 +31,30 @@ export async function initializeDatabase() {
     `);
 
     // Add columns to users table for portfolio info
-    const alterStatements = [
+    const alterUserStatements = [
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS extended_bio TEXT;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_url TEXT;`,
-      `ALTER TABLE users ADD COLUMN IF NOT EXISTS header_text TEXT DEFAULT 'driftlet';`,
-      `ALTER TABLE users ADD COLUMN IF NOT EXISTS header_icon_link TEXT;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS links JSONB;`,
-      `ALTER TABLE users ADD COLUMN IF NOT EXISTS show_attribution BOOLEAN DEFAULT true;`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS header_text TEXT DEFAULT 'driftlet';`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS header_icon_url TEXT;`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS show_header_icon BOOLEAN DEFAULT true;`,
     ];
 
-    for (const statement of alterStatements) {
+    for (const statement of alterUserStatements) {
       await client.query(statement);
     }
+
+    // Create settings table (singleton)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        id INT PRIMARY KEY DEFAULT 1,
+        favicon_url TEXT,
+        show_attribution BOOLEAN DEFAULT true,
+        CONSTRAINT single_row CHECK (id = 1)
+      );
+    `);
   } finally {
     client.release();
   }
@@ -56,21 +66,22 @@ export async function seedDatabase() {
     const adminUsername = "admin";
     const adminPassword = "password";
 
-    const existingUser = await client.query(
-      "SELECT * FROM users WHERE username = $1",
-      [adminUsername],
-    );
+    // Seed admin user
+    const existingUser = await client.query("SELECT * FROM users");
 
-    if (existingUser.rows.length > 0) {
-      return;
+    if (existingUser.rows.length === 0) {
+      console.log("no existing users found, seeding database...");
+      // Seed admin user
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      await client.query(
+        "INSERT INTO users (username, password) VALUES ($1, $2)",
+        [adminUsername, hashedPassword],
+      );
+
+      // Seed settings
+      await client.query("INSERT INTO settings (id) VALUES (1)");
+      console.log("database seeded.");
     }
-
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
-    await client.query(
-      "INSERT INTO users (username, password) VALUES ($1, $2)",
-      [adminUsername, hashedPassword],
-    );
   } finally {
     client.release();
   }

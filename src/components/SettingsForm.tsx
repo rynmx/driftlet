@@ -11,9 +11,13 @@ interface UserSettings {
   bio: string | null;
   extended_bio: string | null;
   profile_picture_url: string | null;
+  // User-specific site settings
   header_text: string | null;
-  header_icon_link: string | null;
+  header_icon_url: string | null;
+  show_header_icon: boolean;
   links: Record<string, string>;
+  // Global site settings
+  favicon_url: string | null;
   show_attribution: boolean;
 }
 
@@ -85,7 +89,7 @@ const SettingsForm = () => {
 
     try {
       const response = await fetch("/api/settings", {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -348,20 +352,36 @@ const SettingsForm = () => {
             </div>
             <div>
               <label
-                htmlFor="header_icon_link"
+                htmlFor="header_icon_url"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 header icon url
               </label>
               <input
-                id="header_icon_link"
+                id="header_icon_url"
                 type="text"
-                name="header_icon_link"
-                value={settings.header_icon_link || ""}
+                name="header_icon_url"
+                value={settings.header_icon_url || ""}
                 onChange={handleInputChange}
                 placeholder="header icon url"
                 className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="show_header_icon"
+                name="show_header_icon"
+                checked={settings.show_header_icon}
+                onChange={handleCheckboxChange}
+                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+              />
+              <label
+                htmlFor="show_header_icon"
+                className="text-sm text-black dark:text-white"
+              >
+                show header icon
+              </label>
             </div>
           </fieldset>
 
@@ -369,6 +389,23 @@ const SettingsForm = () => {
             <legend className="text-lg font-semibold px-2 text-black dark:text-white">
               meta
             </legend>
+            <div>
+              <label
+                htmlFor="favicon_url"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                favicon url
+              </label>
+              <input
+                id="favicon_url"
+                type="text"
+                name="favicon_url"
+                value={settings.favicon_url || ""}
+                onChange={handleInputChange}
+                placeholder="favicon url"
+                className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full"
+              />
+            </div>
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"

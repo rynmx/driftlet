@@ -30,6 +30,9 @@ export async function generateMetadata(): Promise<Metadata> {
       default: `${siteName || "driftlet"}`,
     },
     description,
+    icons: {
+      icon: profile?.favicon_url || "/favicon.ico",
+    },
   };
 }
 

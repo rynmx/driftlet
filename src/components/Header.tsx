@@ -11,9 +11,9 @@ const Header = async () => {
       <div className="flex items-center justify-between h-16 border-b border-black dark:border-gray-700">
         <div className="flex items-center">
           <Link href="/" className="flex items-center space-x-2">
-            {profile?.header_icon_link && (
+            {(profile?.show_header_icon ?? true) && (
               <Image
-                src={profile.header_icon_link}
+                src={profile?.header_icon_url || "/logo.svg"}
                 alt="header icon"
                 width={24}
                 height={24}
