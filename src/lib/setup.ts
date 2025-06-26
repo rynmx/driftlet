@@ -43,17 +43,21 @@ export async function seedDatabase() {
     const existingUser = await client.query("SELECT * FROM users");
 
     if (existingUser.rows.length === 0) {
-      console.log("no existing users found, seeding database...");
-      // Seed admin user
+      console.log("no existing users found, seeding admin user...");
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
       await client.query(
         "INSERT INTO users (username, password) VALUES ($1, $2)",
         [adminUsername, hashedPassword],
       );
+      console.log("admin user seeded.");
+    }
 
-      // Seed settings
+    // Seed settings
+    const existingSettings = await client.query("SELECT * FROM settings");
+    if (existingSettings.rows.length === 0) {
+      console.log("no settings row found, seeding settings...");
       await client.query("INSERT INTO settings (id) VALUES (1)");
-      console.log("database seeded.");
+      console.log("settings seeded.");
     }
   } finally {
     client.release();
