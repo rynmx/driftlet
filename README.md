@@ -2,7 +2,10 @@
 
 a minimalist, modern, and performant blogging and portfolio platform.
 
-[Live Demo](https://ryanaque.com)
+[live demo](https://ryanaque.com) • [driftlet.xyz](https://driftlet.xyz)
+
+> [!INFO]
+> we don't have documentation yet, you will be rick rolled if you click on the documentation in the website.
 
 **note**: this is a very early-stage project. things may be broken or incomplete.
 
@@ -18,8 +21,6 @@ a minimalist, modern, and performant blogging and portfolio platform.
 - [x] an actual icon for the project
 
 ## deploying
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Rma_dC?referralCode=RjkrHM)
 
 this project uses docker. run `docker-compose up -d` to pull the latest image from [docker hub](https://hub.docker.com/r/rynmx/driftlet) and start the app.
 
