@@ -13,7 +13,7 @@ a minimalist, modern, and performant blogging and portfolio platform.
 - [x] basic home page stuff
 - [x] links
 - [ ] page view tracker
-- [ ] page tags
+- [x] page tags
 - [ ] basic theming
 - [x] an actual icon for the project
 
