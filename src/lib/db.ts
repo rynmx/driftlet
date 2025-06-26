@@ -29,25 +29,42 @@ if (process.env.NODE_ENV === "production") {
 
 export const db = pool;
 
+import { dbSchema } from "./schema";
+
 export async function isDatabaseInitialized() {
   const client = await db.connect();
   try {
-    const requiredTables = ["users", "posts", "settings"];
-    for (const table of requiredTables) {
+    for (const tableName in dbSchema) {
+      const table = dbSchema[tableName as keyof typeof dbSchema];
+      const requiredColumns = Object.keys(table.columns);
+
       const res = await client.query(
         `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = $1
-        );
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = $1;
       `,
-        [table],
+        [tableName],
       );
-      if (!res.rows[0].exists) {
+
+      if (res.rowCount === 0) {
+        console.log(
+          `database initialization check failed: table "${tableName}" not found.`,
+        );
         return false;
       }
+
+      const existingColumns = new Set(res.rows.map((row) => row.column_name));
+      for (const col of requiredColumns) {
+        if (!existingColumns.has(col)) {
+          console.log(
+            `database initialization check failed: column "${col}" not found in table "${tableName}".`,
+          );
+          return false;
+        }
+      }
     }
+
     return true;
   } finally {
     client.release();
