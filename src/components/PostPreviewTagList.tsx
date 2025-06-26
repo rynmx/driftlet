@@ -2,11 +2,7 @@
 
 import type { Tag } from "@/lib/posts";
 
-export const PostPreviewTagList = ({
-  tags,
-}: {
-  tags: Tag[];
-}) => {
+export const PostPreviewTagList = ({ tags }: { tags: Tag[] }) => {
   if (!tags || tags.length === 0) {
     return null;
   }

@@ -7,11 +7,10 @@ export const metadata: Metadata = {
   title: "blog",
 };
 
-export default async function BlogPage({
-  searchParams,
-}: {
-  searchParams: { tag?: string | string[] };
+export default async function BlogPage(props: {
+  searchParams: Promise<{ tag?: string | string[] }>;
 }) {
+  const searchParams = await props.searchParams;
   const { tag } = searchParams;
   const selectedTags = tag || [];
   const posts = await getPosts(selectedTags);
