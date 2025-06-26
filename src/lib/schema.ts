@@ -26,6 +26,20 @@ export const dbSchema = {
       author_id: "UUID NOT NULL REFERENCES users(id)",
     },
   },
+  tags: {
+    columns: {
+      id: "UUID PRIMARY KEY DEFAULT uuid_generate_v4()",
+      name: "TEXT NOT NULL UNIQUE",
+      created_at: "TIMESTAMPTZ DEFAULT NOW()",
+    },
+  },
+  posts_tags: {
+    columns: {
+      post_id: "UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE",
+      tag_id: "UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE",
+    },
+    constraints: "PRIMARY KEY (post_id, tag_id)",
+  },
   settings: {
     columns: {
       id: "INT PRIMARY KEY DEFAULT 1",

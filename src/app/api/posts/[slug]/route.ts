@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { getPostBySlug } from "@/lib/posts";
+import { getPostBySlug, updatePost, deletePost } from "@/lib/posts";
 
 // GET a single post by slug
 export async function GET(
@@ -37,7 +36,7 @@ export async function PUT(
   }
 
   try {
-    const { title, slug: newSlug, content } = await req.json();
+    const { title, slug: newSlug, content, tags } = await req.json();
 
     if (!title || !newSlug || !content) {
       return NextResponse.json(
@@ -46,34 +45,38 @@ export async function PUT(
       );
     }
 
-    const userId = session.user.id;
+    const post = await getPostBySlug(oldSlug);
 
-    const client = await db.connect();
-    try {
-      // First, verify the user owns the post
-      const postCheck = await client.query(
-        "SELECT author_id FROM posts WHERE slug = $1",
-        [oldSlug],
-      );
-      if (postCheck.rows.length === 0) {
-        return NextResponse.json({ error: "post not found" }, { status: 404 });
-      }
-      if (postCheck.rows[0].author_id !== userId) {
-        return NextResponse.json({ error: "forbidden" }, { status: 403 });
-      }
-
-      // Update the post
-      const result = await client.query(
-        "UPDATE posts SET title = $1, slug = $2, content = $3, updated_at = NOW() WHERE slug = $4 RETURNING *",
-        [title, newSlug, content, oldSlug],
-      );
-
-      return NextResponse.json(result.rows[0]);
-    } finally {
-      client.release();
+    if (!post) {
+      return NextResponse.json({ error: "post not found" }, { status: 404 });
     }
+
+    if (post.author_id !== session.user.id) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
+    const updatedPost = await updatePost(
+      post.id,
+      newSlug,
+      title,
+      content,
+      tags || [],
+    );
+
+    return NextResponse.json(updatedPost);
   } catch (error) {
     console.error("failed to update post:", error);
+    if (
+      error instanceof Error &&
+      error.message.includes(
+        'duplicate key value violates unique constraint "posts_slug_key"',
+      )
+    ) {
+      return NextResponse.json(
+        { error: "slug is already taken" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: "internal server error" },
       { status: 500 },
@@ -93,32 +96,21 @@ export async function DELETE(
   }
 
   try {
-    const userId = session.user.id;
-
-    const client = await db.connect();
-    try {
-      // Verify ownership before deleting
-      const postCheck = await client.query(
-        "SELECT author_id FROM posts WHERE slug = $1",
-        [slug],
-      );
-      if (postCheck.rows.length === 0) {
-        return NextResponse.json({ error: "post not found" }, { status: 404 });
-      }
-      if (postCheck.rows[0].author_id !== userId) {
-        return NextResponse.json({ error: "forbidden" }, { status: 403 });
-      }
-
-      await client.query("DELETE FROM posts WHERE slug = $1", [slug]);
-      return NextResponse.json(
-        { message: "post deleted successfully" },
-        { status: 200 },
-      );
-    } finally {
-      client.release();
-    }
+    await deletePost(slug, session.user.id);
+    return NextResponse.json(
+      { message: "post deleted successfully" },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("failed to delete post:", error);
+    if (error instanceof Error) {
+      if (error.message === "post not found") {
+        return NextResponse.json({ error: "post not found" }, { status: 404 });
+      }
+      if (error.message === "user is not authorized to delete this post") {
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      }
+    }
     return NextResponse.json(
       { error: "internal server error" },
       { status: 500 },

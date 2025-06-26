@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { createPost } from "@/lib/posts";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { title, slug, content } = await req.json();
+    const { title, slug, content, tags } = await req.json();
 
     if (!title || !slug || !content) {
       return NextResponse.json(
@@ -20,21 +20,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const userId = session.user.id;
+    const newPost = await createPost(
+      slug,
+      title,
+      content,
+      session.user.id,
+      tags || [],
+    );
 
-    const client = await db.connect();
-    try {
-      const result = await client.query(
-        "INSERT INTO posts (title, slug, content, author_id) VALUES ($1, $2, $3, $4) RETURNING *",
-        [title, slug, content, userId],
-      );
-      const newPost = result.rows[0];
-      return NextResponse.json(newPost, { status: 201 });
-    } finally {
-      client.release();
-    }
+    return NextResponse.json(newPost, { status: 201 });
   } catch (error) {
     console.error("failed to create post:", error);
+    if (
+      error instanceof Error &&
+      error.message.includes(
+        'duplicate key value violates unique constraint "posts_slug_key"',
+      )
+    ) {
+      return NextResponse.json(
+        { error: "slug is already taken" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: "internal server error" },
       { status: 500 },

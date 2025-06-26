@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import zxcvbn from "zxcvbn";
 import { useRouter } from "next/navigation";
+import TagManagement from "./TagManagement";
 
 interface UserSettings {
   username: string;
@@ -327,6 +328,13 @@ const SettingsForm = () => {
                 className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full"
               />
             </div>
+          </fieldset>
+
+          <fieldset className="flex flex-col gap-4 border border-black dark:border-gray-700 p-4">
+            <legend className="text-lg font-semibold px-2 text-black dark:text-white">
+              tag management
+            </legend>
+            <TagManagement />
           </fieldset>
 
           <fieldset className="flex flex-col gap-4 border border-black dark:border-gray-700 p-4">

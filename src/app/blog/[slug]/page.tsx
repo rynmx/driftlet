@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import { PostTagList } from "@/components/PostTagList";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -48,13 +49,34 @@ export default async function BlogPostPage({
           <h1 className="text-3xl font-bold mb-2 text-black dark:text-white">
             {post.title}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {new Date(post.created_at).toLocaleDateString("en-us", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            <span>
+              {new Date(post.created_at).toLocaleDateString("en-us", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+            {post.author.name && (
+              <span className="ml-2">by {post.author.name}</span>
+            )}
+            {post.updated_at &&
+              new Date(post.updated_at).getTime() !==
+                new Date(post.created_at).getTime() && (
+                <span className="ml-2">
+                  (last edited on{" "}
+                  {new Date(post.updated_at).toLocaleDateString("en-us", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                  )
+                </span>
+              )}
+          </div>
+
+          <PostTagList tags={post.tags} />
+
           {isAuthor && (
             <Link
               href={`/admin/edit/${post.slug}`}
