@@ -19,7 +19,11 @@ a minimalist, modern, and performant blogging and portfolio platform.
 
 ## deploying
 
-tbd, but just use docker but i use railway so hehe
+[![deploy on railway](https://railway.com/button.svg)](https://railway.com/deploy/so6ODq?referralCode=RjkrHM)
+
+this project uses docker. run `docker-compose up -d` to pull the latest image from [docker hub](https://hub.docker.com/r/rynmx/driftlet) and start the app.
+
+new images are built automatically by github actions on every push to `main`.
 
 ### 1. populate .env
 
@@ -42,7 +46,8 @@ DATABASE_URL="postgresql://user:password@localhost:5432/driftlet"
 docker compose up -d
 ```
 
-your site should now be available at [http://localhost:3000](http://localhost:3000)
+your site should now be available at port `3000`, but you should use a reverse proxy to expose it to the internet.
+(i suggest [caddy](https://github.com/caddyserver/caddy) or [nginx proxy manager](hhttps://github.com/NginxProxyManager/nginx-proxy-manager))
 
 ## getting started (dev)
 

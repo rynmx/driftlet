@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: rynmx/driftlet:latest
     restart: always
     ports:
       - "3000:3000"
