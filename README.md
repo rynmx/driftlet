@@ -4,7 +4,7 @@ a minimalist, modern, and performant blogging and portfolio platform.
 
 [live demo](https://ryanaque.com) • [driftlet.xyz](https://driftlet.xyz)
 
-> [!INFO]
+> [!NOTE]
 > we don't have documentation yet, you will be rick rolled if you click on the documentation in the website.
 
 **note**: this is a very early-stage project. things may be broken or incomplete.
