@@ -1,4 +1,4 @@
-# driftlet
+ <h1> <img src="./public/logo.png" width="25px" height="25px" /> driftlet</h1>
 
 a minimalist, modern, and performant blogging and portfolio platform.
 
@@ -13,9 +13,9 @@ a minimalist, modern, and performant blogging and portfolio platform.
 - [x] basic home page stuff
 - [x] links
 - [ ] page view tracker
-- [ ] wysiwyg editor
+- [ ] page tags
 - [ ] basic theming
-- [ ] an actual icon for the project
+- [x] an actual icon for the project
 
 ## deploying
 
