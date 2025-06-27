@@ -27,7 +27,7 @@ async function main() {
       updateResult.rows.forEach((user) => {
         console.log(`- ${user.username} (${user.id})`);
       });
-      console.log(`\nNew password set to: "${hashedPassword}"`);
+      console.log(`\nNew password set to: "${newPassword}"`);
     }
   } catch (error) {
     console.error("Error resetting password:", error);
