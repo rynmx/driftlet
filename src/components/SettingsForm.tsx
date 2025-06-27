@@ -75,7 +75,6 @@ const SettingsForm = () => {
   }, []);
 
   const generateNewPassphrase = async () => {
-    console.log("Generating new recovery passphrase...");
     if (!currentPassword) {
       setError(
         "current password is required to generate a recovery passphrase",
@@ -100,7 +99,6 @@ const SettingsForm = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Recovery passphrase response:", data);
         setSuccessMessage("recovery passphrase generated successfully!");
 
         // Display the new recovery passphrase
