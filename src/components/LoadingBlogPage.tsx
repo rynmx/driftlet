@@ -29,7 +29,9 @@ export default function LoadingBlogPage() {
                 <div className="w-32 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               </div>
               <div className="w-full h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-4" />
-              {i < 3 && <hr className="mt-6 border-black dark:border-gray-700" />}
+              {i < 3 && (
+                <hr className="mt-6 border-black dark:border-gray-700" />
+              )}
             </div>
           ))}
         </div>
