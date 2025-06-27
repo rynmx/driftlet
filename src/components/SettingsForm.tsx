@@ -20,6 +20,11 @@ interface UserSettings {
   // Global site settings
   favicon_url: string | null;
   show_attribution: boolean;
+  // Recovery passphrase status
+  has_recovery_passphrase: boolean;
+  recovery_passphrase_created_at: string | null;
+  // Optional response data
+  recovery_passphrase_plain?: string;
 }
 
 const SettingsForm = () => {
@@ -44,6 +49,15 @@ const SettingsForm = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [recoveryPassphrase, setRecoveryPassphrase] = useState("");
+
+  // Debug recovery passphrase state
+  useEffect(() => {
+    console.log(
+      "Recovery passphrase state:",
+      recoveryPassphrase ? "present" : "empty",
+    );
+  }, [recoveryPassphrase]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -60,11 +74,70 @@ const SettingsForm = () => {
     fetchSettings();
   }, []);
 
+  const generateNewPassphrase = async () => {
+    console.log("Generating new recovery passphrase...");
+    if (!currentPassword) {
+      setError(
+        "current password is required to generate a recovery passphrase",
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+    setRecoveryPassphrase(""); // Clear any previous passphrase
+
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          generateRecoveryPassphrase: true,
+          currentPassword,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Recovery passphrase response:", data);
+        setSuccessMessage("recovery passphrase generated successfully!");
+
+        // Display the new recovery passphrase
+        if (data.recovery_passphrase_plain) {
+          // Set the recovery passphrase to display in the UI
+          setRecoveryPassphrase(data.recovery_passphrase_plain);
+
+          // Update the settings object with the latest data from the API response
+          setSettings((prevSettings) => {
+            if (!prevSettings) return null;
+            return {
+              ...prevSettings,
+              has_recovery_passphrase: true, // Mark that a recovery passphrase exists
+              recovery_passphrase_created_at: new Date().toISOString(),
+            };
+          });
+        } else {
+          console.error("API response missing recovery_passphrase_plain");
+        }
+      } else {
+        const data = await response.json();
+        setError(data.error || "failed to generate recovery passphrase");
+      }
+    } catch (err) {
+      console.error("passphrase generation failed:", err);
+      setError("failed to connect to the server.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
     setSuccessMessage("");
+    setRecoveryPassphrase(""); // Clear any previous passphrase - this also hides the passphrase section
 
     let parsedLinks;
     try {
@@ -81,6 +154,9 @@ const SettingsForm = () => {
       return;
     }
 
+    // We don't need to include recovery passphrase generation in the general form update
+    // as we have a dedicated function for it now
+
     const payload = {
       ...settings,
       links: parsedLinks,
@@ -96,7 +172,13 @@ const SettingsForm = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
         setSuccessMessage("settings updated successfully!");
+
+        // If a recovery passphrase was generated, display it
+        if (data.recovery_passphrase_plain) {
+          setRecoveryPassphrase(data.recovery_passphrase_plain); // Setting this will show the passphrase section
+        }
       } else {
         const data = await response.json();
         setError(data.error || "an unknown error occurred.");
@@ -328,6 +410,69 @@ const SettingsForm = () => {
                 className="p-2 bg-transparent border border-black dark:border-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white w-full"
               />
             </div>
+
+            {/* Recovery Passphrase Section */}
+            {!recoveryPassphrase ? (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="font-medium mb-2 text-black dark:text-white">
+                  recovery passphrase
+                </h3>
+
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      status:
+                      <span
+                        className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${settings.has_recovery_passphrase ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"}`}
+                      >
+                        {settings.has_recovery_passphrase
+                          ? "enabled"
+                          : "not set"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {settings.has_recovery_passphrase
+                        ? "you have a recovery passphrase set for account recovery."
+                        : "set up a recovery passphrase to help recover your account if needed."}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={generateNewPassphrase}
+                    disabled={isSubmitting}
+                    className="px-3 py-1.5 text-sm border border-black dark:border-gray-700 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white transition-colors disabled:opacity-50"
+                  >
+                    generate new passphrase
+                  </button>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    requires your current password for security.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 mt-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-500 rounded-md">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="text-sm font-bold text-yellow-800 dark:text-yellow-300">
+                    your recovery passphrase
+                  </h4>
+                </div>
+                <p className="text-xs mb-2 text-yellow-700 dark:text-yellow-400">
+                  save this passphrase somewhere secure. it can be used to
+                  recover your account if you forget your password.
+                </p>
+                <div className="p-2 bg-white dark:bg-gray-800 border border-yellow-400 rounded-md">
+                  <code className="text-sm break-all font-mono">
+                    {recoveryPassphrase}
+                  </code>
+                </div>
+                <p className="text-xs mt-2 text-yellow-700 dark:text-yellow-400">
+                  this passphrase will not be shown again.
+                </p>
+              </div>
+            )}
           </fieldset>
 
           <fieldset className="flex flex-col gap-4 border border-black dark:border-gray-700 p-4">

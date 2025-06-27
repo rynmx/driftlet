@@ -27,6 +27,29 @@ export async function initializeDatabase() {
       `;
 
       await client.query(createTableQuery);
+
+      console.log(`checking for missing columns in ${tableName}...`);
+      const tableInfoQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = '${tableName}';
+      `;
+
+      const existingColumns = await client.query(tableInfoQuery);
+      const existingColumnNames = existingColumns.rows.map(
+        (row) => row.column_name,
+      );
+
+      for (const [colName, colDef] of Object.entries(columns)) {
+        if (!existingColumnNames.includes(colName)) {
+          console.log(`adding missing column: ${colName} to ${tableName}`);
+          const addColumnQuery = `
+            ALTER TABLE ${tableName}
+            ADD COLUMN "${colName}" ${colDef};
+          `;
+          await client.query(addColumnQuery);
+        }
+      }
     }
   } finally {
     client.release();
@@ -52,7 +75,7 @@ export async function seedDatabase() {
       console.log("admin user seeded.");
     } else {
       const blankPasswordUsers = await client.query(
-        "SELECT id, username FROM users WHERE password = '' OR password IS NULL",
+        "SELECT id, username FROM users WHERE password = 'reset' OR password IS NULL",
       );
 
       if (blankPasswordUsers.rows.length > 0) {

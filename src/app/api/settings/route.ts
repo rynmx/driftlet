@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { generatePassphrase, hashPassphrase } from "@/lib/passphrase";
 
 // GET all settings (user and site)
 export async function GET() {
@@ -17,7 +18,7 @@ export async function GET() {
     try {
       // Fetch user-specific settings
       const userResult = await client.query(
-        "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon FROM users WHERE id = $1",
+        "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon, recovery_passphrase IS NOT NULL as has_recovery_passphrase, recovery_passphrase_created_at FROM users WHERE id = $1",
         [userId],
       );
 
@@ -119,9 +120,18 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // Handle password and username changes
-    const { username, newPassword, currentPassword } = body;
-    if (newPassword || (username && username !== session.user.name)) {
+    // Handle password, username and recovery passphrase changes
+    const {
+      username,
+      newPassword,
+      currentPassword,
+      generateRecoveryPassphrase,
+    } = body;
+    if (
+      newPassword ||
+      (username && username !== session.user.name) ||
+      generateRecoveryPassphrase
+    ) {
       const currentUserResult = await client.query(
         "SELECT * FROM users WHERE id = $1",
         [userId],
@@ -164,13 +174,39 @@ export async function PATCH(req: Request) {
           userId,
         ]);
       }
+
+      if (generateRecoveryPassphrase) {
+        if (
+          !currentPassword ||
+          !bcrypt.compareSync(currentPassword, user.password)
+        ) {
+          await client.query("ROLLBACK");
+          return NextResponse.json(
+            {
+              error:
+                "current password required to generate recovery passphrase",
+            },
+            { status: 401 },
+          );
+        }
+
+        const passphrase = generatePassphrase(18); // 5 words for better security
+        const hashedPassphrase = await hashPassphrase(passphrase);
+
+        await client.query(
+          "UPDATE users SET recovery_passphrase = $1, recovery_passphrase_created_at = NOW() WHERE id = $2",
+          [hashedPassphrase, userId],
+        );
+
+        userUpdates.recovery_passphrase_plain = passphrase;
+      }
     }
 
     await client.query("COMMIT");
 
     // Fetch the newly updated combined settings to return
     const updatedUserResult = await client.query(
-      "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon FROM users WHERE id = $1",
+      "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon, recovery_passphrase IS NOT NULL as has_recovery_passphrase, recovery_passphrase_created_at FROM users WHERE id = $1",
       [userId],
     );
     const updatedSiteSettingsResult = await client.query(
@@ -180,6 +216,10 @@ export async function PATCH(req: Request) {
     const combinedSettings = {
       ...updatedUserResult.rows[0],
       ...updatedSiteSettingsResult.rows[0],
+      // Include the plain text passphrase in the response if it was generated
+      ...(userUpdates.recovery_passphrase_plain && {
+        recovery_passphrase_plain: userUpdates.recovery_passphrase_plain,
+      }),
     };
 
     return NextResponse.json(combinedSettings);
