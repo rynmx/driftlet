@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 enum RecoveryStep {
   VERIFY = "verify",
@@ -12,6 +13,7 @@ enum RecoveryStep {
 
 export default function PasswordRecovery() {
   const router = useRouter();
+  const { status } = useSession();
   const [step, setStep] = useState<RecoveryStep>(RecoveryStep.VERIFY);
   const [username, setUsername] = useState("");
   const [passphrase, setPassphrase] = useState("");
@@ -19,6 +21,12 @@ export default function PasswordRecovery() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/settings");
+    }
+  }, [status, router]);
 
   const handleVerifyCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
