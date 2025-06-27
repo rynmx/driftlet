@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getPublicProfile } from "@/lib/user";
 import AuthNavLinks from "./AuthNavLinks";
+import MobileMenu from "./MobileMenu";
 
 const Header = async () => {
   const profile = await getPublicProfile();
@@ -25,7 +26,9 @@ const Header = async () => {
             </span>
           </Link>
         </div>
-        <nav className="flex items-center space-x-4">
+
+        {/* Desktop navigation - hidden on mobile */}
+        <nav className="hidden md:flex items-center space-x-4">
           <Link
             href="/"
             className="font-medium text-black dark:text-white hover:underline"
@@ -40,6 +43,9 @@ const Header = async () => {
           </Link>
           <AuthNavLinks />
         </nav>
+
+        {/* Mobile menu - visible only on mobile */}
+        <MobileMenu />
       </div>
     </header>
   );
