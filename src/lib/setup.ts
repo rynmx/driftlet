@@ -44,7 +44,7 @@ export async function seedDatabase() {
 
     if (existingUser.rows.length === 0) {
       console.log("no existing users found, seeding admin user...");
-      const hashedPassword = await bcrypt.hash(adminPassword, 20);
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
       await client.query(
         "INSERT INTO users (username, password) VALUES ($1, $2)",
         [adminUsername, hashedPassword],

@@ -140,7 +140,7 @@ export async function PATCH(req: Request) {
             { status: 401 },
           );
         }
-        hashedPassword = await bcrypt.hash(newPassword, 20);
+        hashedPassword = await bcrypt.hash(newPassword, 12);
         await client.query("UPDATE users SET password = $1 WHERE id = $2", [
           hashedPassword,
           userId,

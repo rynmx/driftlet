@@ -12,7 +12,7 @@ async function main() {
   try {
     // Generate a hash for the password "password"
     const newPassword = "password";
-    const hashedPassword = await bcrypt.hash(newPassword, 20);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // Update all users with the new password
     const updateResult = await client.query(
@@ -27,7 +27,7 @@ async function main() {
       updateResult.rows.forEach((user) => {
         console.log(`- ${user.username} (${user.id})`);
       });
-      console.log(`\nNew password set to: "${newPassword}"`);
+      console.log(`\nNew password set to: "${hashedPassword}"`);
     }
   } catch (error) {
     console.error("Error resetting password:", error);
