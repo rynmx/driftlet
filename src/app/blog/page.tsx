@@ -1,5 +1,6 @@
 import { getPosts, getTags } from "@/lib/posts";
 import BlogPageClient from "@/components/BlogPageClient";
+import LoadingBlogPage from "@/components/LoadingBlogPage";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -17,7 +18,7 @@ export default async function BlogPage(props: {
   const allTags = await getTags();
 
   return (
-    <Suspense fallback={<div>loading...</div>}>
+    <Suspense fallback={<LoadingBlogPage />}>
       <BlogPageClient posts={posts} allTags={allTags} />
     </Suspense>
   );
