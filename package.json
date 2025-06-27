@@ -11,7 +11,8 @@
     "db:init": "tsx --require dotenv/config src/scripts/init-db.ts",
     "db:seed": "tsx --require dotenv/config src/scripts/seed-db.ts",
     "db:reset": "tsx --require dotenv/config src/scripts/reset-db.ts",
-    "db:nuke": "tsx --require dotenv/config src/scripts/nuke-db.ts"
+    "db:nuke": "tsx --require dotenv/config src/scripts/nuke-db.ts",
+    "user:resetpw": "tsx --require dotenv/config src/scripts/reset-password.ts"
   },
   "dependencies": {
     "@fengkx/react-syntax-highlighter": "^15.6.1",
