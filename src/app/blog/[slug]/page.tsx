@@ -1,10 +1,13 @@
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import { getPostBySlug } from "@/lib/posts";
+import { getPostBySlug, getAdjacentPosts } from "@/lib/posts";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { PostTagList } from "@/components/PostTagList";
+import BlogPostNavigation from "@/components/BlogPostNavigation";
+import AuthorProfileCard from "@/components/AuthorProfileCard";
+import { getPublicProfile } from "@/lib/user";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -35,11 +38,14 @@ export default async function BlogPostPage({
   const { slug } = await paramsPromise;
   const post = await getPostBySlug(slug);
   const session = await getServerSession(authOptions);
+  const profile = await getPublicProfile();
 
   if (!post) {
     notFound();
   }
 
+  // Get adjacent posts for navigation
+  const adjacentPosts = await getAdjacentPosts(slug);
   const isAuthor = session?.user?.id === post.author_id;
 
   return (
@@ -89,6 +95,15 @@ export default async function BlogPostPage({
         <div className="prose dark:prose-invert max-w-none">
           <MarkdownRenderer>{post.content}</MarkdownRenderer>
         </div>
+
+        {/* Author Profile */}
+        {profile && <AuthorProfileCard profile={profile} />}
+
+        {/* Blog post navigation */}
+        <BlogPostNavigation
+          previous={adjacentPosts.previous}
+          next={adjacentPosts.next}
+        />
       </article>
     </main>
   );

@@ -284,3 +284,56 @@ export async function deleteTag(id: string): Promise<void> {
     client.release();
   }
 }
+
+export interface AdjacentPost {
+  slug: string;
+  title: string;
+  created_at: string;
+}
+
+export async function getAdjacentPosts(currentSlug: string): Promise<{
+  previous: AdjacentPost | null;
+  next: AdjacentPost | null;
+}> {
+  const client = await db.connect();
+  try {
+    // First get the current post's ID
+    const currentPostResult = await client.query(
+      `SELECT id FROM posts WHERE slug = $1`,
+      [currentSlug],
+    );
+
+    if (currentPostResult.rows.length === 0) {
+      return { previous: null, next: null };
+    }
+
+    const currentPostId = currentPostResult.rows[0].id;
+
+    // Get the previous post (with ID less than current)
+    const previousResult = await client.query(
+      `SELECT slug, title, created_at 
+       FROM posts 
+       WHERE id < $1 
+       ORDER BY id DESC 
+       LIMIT 1`,
+      [currentPostId],
+    );
+
+    // Get the next post (with ID greater than current)
+    const nextResult = await client.query(
+      `SELECT slug, title, created_at 
+       FROM posts 
+       WHERE id > $1 
+       ORDER BY id ASC 
+       LIMIT 1`,
+      [currentPostId],
+    );
+
+    return {
+      previous: previousResult.rows[0] || null,
+      next: nextResult.rows[0] || null,
+    };
+  } finally {
+    client.release();
+  }
+}
