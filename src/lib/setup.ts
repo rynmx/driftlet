@@ -46,10 +46,32 @@ export async function seedDatabase() {
       console.log("no existing users found, seeding admin user...");
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
       await client.query(
-        "INSERT INTO users (username, password) VALUES ($1, $2)",
+        "INSERT INTO users (username, password, recovery_passphrase) VALUES ($1, $2, NULL)",
         [adminUsername, hashedPassword],
       );
       console.log("admin user seeded.");
+    } else {
+      const blankPasswordUsers = await client.query(
+        "SELECT id, username FROM users WHERE password = '' OR password IS NULL",
+      );
+
+      if (blankPasswordUsers.rows.length > 0) {
+        console.log(
+          `Found ${blankPasswordUsers.rows.length} user(s) with blank passwords. Setting default passwords...`,
+        );
+
+        for (const user of blankPasswordUsers.rows) {
+          const defaultPassword = "password";
+          const hashedPassword = await bcrypt.hash(defaultPassword, 12);
+
+          await client.query("UPDATE users SET password = $1 WHERE id = $2", [
+            hashedPassword,
+            user.id,
+          ]);
+
+          console.log(`Default password set for user: ${user.username}`);
+        }
+      }
     }
 
     // Seed settings
