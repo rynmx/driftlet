@@ -13,6 +13,8 @@ export const dbSchema = {
       header_text: "TEXT DEFAULT 'driftlet'",
       header_icon_url: "TEXT",
       show_header_icon: "BOOLEAN DEFAULT true",
+      recovery_passphrase: "TEXT",
+      recovery_passphrase_created_at: "TIMESTAMPTZ",
     },
   },
   posts: {
