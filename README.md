@@ -39,6 +39,14 @@ DATABASE_USER=user
 DATABASE_PASSWORD=password
 DATABASE_NAME=driftlet
 DATABASE_URL="postgresql://user:password@localhost:5432/driftlet"
+
+# database connection pool configuration (optional - defaults shown)
+DB_POOL_MAX_CONNECTIONS=20
+DB_POOL_MIN_CONNECTIONS=2
+DB_CONNECTION_TIMEOUT_MS=5000
+DB_IDLE_TIMEOUT_MS=30000
+DB_QUERY_TIMEOUT_MS=30000
+DB_STATEMENT_TIMEOUT_MS=60000
 ```
 
 ### 2. run the server
@@ -65,6 +73,14 @@ DATABASE_USER=user
 DATABASE_PASSWORD=password
 DATABASE_NAME=driftlet
 DATABASE_URL="postgresql://user:password@localhost:5432/driftlet"
+
+# database connection pool configuration (optional - defaults shown)
+DB_POOL_MAX_CONNECTIONS=20
+DB_POOL_MIN_CONNECTIONS=2
+DB_CONNECTION_TIMEOUT_MS=5000
+DB_IDLE_TIMEOUT_MS=30000
+DB_QUERY_TIMEOUT_MS=30000
+DB_STATEMENT_TIMEOUT_MS=60000
 ```
 
 ### 2. set up the database

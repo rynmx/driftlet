@@ -14,6 +14,19 @@ const config: PoolConfig = {
     process.env.POSTGRES_SSL_ENABLED === "true"
       ? { rejectUnauthorized: false } // Required for platforms like Railway
       : undefined,
+  max: parseInt(process.env.DB_POOL_MAX_CONNECTIONS || "20", 10),
+  min: parseInt(process.env.DB_POOL_MIN_CONNECTIONS || "2", 10),
+  connectionTimeoutMillis: parseInt(
+    process.env.DB_CONNECTION_TIMEOUT_MS || "5000",
+    10,
+  ),
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT_MS || "30000", 10),
+  query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT_MS || "30000", 10),
+  statement_timeout: parseInt(
+    process.env.DB_STATEMENT_TIMEOUT_MS || "60000",
+    10,
+  ),
+  allowExitOnIdle: true,
 };
 
 if (process.env.NODE_ENV === "production") {
