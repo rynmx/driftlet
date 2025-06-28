@@ -6,16 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { FiArrowUpRight } from "react-icons/fi";
-import { isDatabaseInitialized } from "@/lib/db";
-import Setup from "@/components/Setup";
 
 export default async function Home() {
-  const dbInitialized = await isDatabaseInitialized();
-
-  if (!dbInitialized) {
-    return <Setup />;
-  }
-
   const profile = await getPublicProfile();
   const latestPosts = await getLatestPosts();
 

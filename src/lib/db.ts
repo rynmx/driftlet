@@ -1,5 +1,5 @@
 import { Pool, PoolConfig, PoolClient } from "pg";
-import { dbSchema } from "./schema";
+import { initializeDatabase } from "./setup";
 
 // Performance monitoring types
 interface QueryMetrics {
@@ -29,6 +29,32 @@ const SLOW_QUERY_THRESHOLD = parseInt(
   process.env.SLOW_QUERY_THRESHOLD_MS || "1000",
   10,
 );
+
+// Auto-initialization state and configuration
+let isInitializing = false;
+const AUTO_INITIALIZE_ENABLED = process.env.DB_AUTO_INITIALIZE !== "false"; // Enabled by default, can be explicitly disabled
+
+/**
+ * Check if an error is a PostgreSQL schema-related error (missing table or column).
+ * @param error - The error to check
+ * @returns true if the error indicates a missing table or column
+ */
+function isSchemaError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error.code === "42P01" || error.code === "42703")
+  );
+}
+
+/**
+ * Check if auto-initialization should be attempted.
+ * @returns true if auto-initialization is enabled and not already in progress
+ */
+function shouldAutoInitialize(): boolean {
+  return AUTO_INITIALIZE_ENABLED && !isInitializing;
+}
 const METRICS_FLUSH_INTERVAL = parseInt(
   process.env.METRICS_FLUSH_INTERVAL_MS || "300000",
   10,
@@ -115,8 +141,9 @@ function trackQueryPerformance(queryName: string, duration: number) {
 }
 
 /**
- * Utility function to handle database connections with automatic cleanup.
+ * Utility function to handle database connections with automatic cleanup and schema auto-initialization.
  * This reduces code duplication and ensures connections are always properly released.
+ * Automatically initializes the database schema if missing tables or columns are detected.
  *
  * @param operation - A function that receives a database client and returns a Promise
  * @param queryName - Optional name for performance monitoring
@@ -128,6 +155,7 @@ export async function withDbConnection<T>(
 ): Promise<T> {
   const startTime = Date.now();
   const client = await db.connect();
+
   try {
     const result = await operation(client);
 
@@ -145,6 +173,41 @@ export async function withDbConnection<T>(
     }
 
     return result;
+  } catch (error) {
+    // Check if this is a schema-related error and auto-initialization is enabled
+    if (isSchemaError(error) && shouldAutoInitialize()) {
+      const errorCode = (error as { code: string }).code;
+      console.log(
+        `Schema error detected (${errorCode}), attempting auto-initialization...`,
+      );
+
+      try {
+        isInitializing = true;
+        await initializeDatabase();
+        console.log(
+          "Database auto-initialization completed, retrying operation...",
+        );
+
+        // Retry the operation once after initialization
+        const retryResult = await operation(client);
+
+        // Track performance metrics for the retry
+        const duration = Date.now() - startTime;
+        if (queryName) {
+          trackQueryPerformance(queryName, duration);
+        }
+
+        return retryResult;
+      } catch (initError) {
+        console.error("Database auto-initialization failed:", initError);
+        throw error; // Throw the original error, not the init error
+      } finally {
+        isInitializing = false;
+      }
+    }
+
+    // Re-throw the original error for non-schema errors or if auto-init is disabled
+    throw error;
   } finally {
     client.release();
   }
@@ -477,41 +540,4 @@ export async function getPerformanceSummary() {
     inMemoryMetrics: memoryMetrics.length,
     databaseMetrics: dbMetrics.length,
   };
-}
-
-export async function isDatabaseInitialized() {
-  return withDbConnection(async (client) => {
-    for (const tableName in dbSchema) {
-      const table = dbSchema[tableName as keyof typeof dbSchema];
-      const requiredColumns = Object.keys(table.columns);
-
-      const res = await client.query(
-        `
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = $1;
-      `,
-        [tableName],
-      );
-
-      if (res.rowCount === 0) {
-        console.log(
-          `database initialization check failed: table "${tableName}" not found.`,
-        );
-        return false;
-      }
-
-      const existingColumns = new Set(res.rows.map((row) => row.column_name));
-      for (const col of requiredColumns) {
-        if (!existingColumns.has(col)) {
-          console.log(
-            `database initialization check failed: column "${col}" not found in table "${tableName}".`,
-          );
-          return false;
-        }
-      }
-    }
-
-    return true;
-  }, "isDatabaseInitialized");
 }

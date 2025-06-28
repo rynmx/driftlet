@@ -42,6 +42,9 @@ DB_CONNECTION_TIMEOUT_MS=5000
 DB_IDLE_TIMEOUT_MS=30000
 DB_QUERY_TIMEOUT_MS=30000
 DB_STATEMENT_TIMEOUT_MS=60000
+
+# auto-initialization (optional)
+DB_AUTO_INITIALIZE=true  # auto-create missing tables/columns
 ```
 
 ## deploying
