@@ -20,27 +20,22 @@ a minimalist, modern, and performant blogging and portfolio platform.
 - [ ] basic theming
 - [x] an actual icon for the project
 
-## deploying
+## configuration
 
-this project uses docker. run `docker-compose up -d` to pull the latest image from [docker hub](https://hub.docker.com/r/rynmx/driftlet) and start the app.
-
-new images are built automatically by github actions on every push to `main`.
-
-### 1. populate .env
-
-create a `.env` file in the root of the project and add the following:
+create a `.env` or `.env.local` file in the root of the project and add the following:
 
 ```env
-# nextauth secret - change this to a random string
+# authentication
 NEXTAUTH_SECRET=your-super-secret-key
+NEXTAUTH_URL=https://my-site.com
 
-# database connection (matches docker-compose.yml)
+# database connection
 DATABASE_USER=user
 DATABASE_PASSWORD=password
 DATABASE_NAME=driftlet
 DATABASE_URL="postgresql://user:password@localhost:5432/driftlet"
 
-# database connection pool configuration (optional - defaults shown)
+# pool configuration
 DB_POOL_MAX_CONNECTIONS=20
 DB_POOL_MIN_CONNECTIONS=2
 DB_CONNECTION_TIMEOUT_MS=5000
@@ -49,7 +44,11 @@ DB_QUERY_TIMEOUT_MS=30000
 DB_STATEMENT_TIMEOUT_MS=60000
 ```
 
-### 2. run the server
+## deploying
+
+this project uses docker. run `docker-compose up -d` to pull the latest image from [docker hub](https://hub.docker.com/r/rynmx/driftlet) and start the app.
+
+new images are built automatically by github actions on every push to `main`.
 
 ```bash
 docker compose up -d
@@ -60,30 +59,7 @@ your site should now be available at port `3000`, but you should use a reverse p
 
 ## getting started (dev)
 
-### 1. populate .env
-
-create a `.env` file in the root of the project and add the following:
-
-```env
-# nextauth secret - change this to a random string
-NEXTAUTH_SECRET=your-super-secret-key
-
-# database connection (matches docker-compose.yml)
-DATABASE_USER=user
-DATABASE_PASSWORD=password
-DATABASE_NAME=driftlet
-DATABASE_URL="postgresql://user:password@localhost:5432/driftlet"
-
-# database connection pool configuration (optional - defaults shown)
-DB_POOL_MAX_CONNECTIONS=20
-DB_POOL_MIN_CONNECTIONS=2
-DB_CONNECTION_TIMEOUT_MS=5000
-DB_IDLE_TIMEOUT_MS=30000
-DB_QUERY_TIMEOUT_MS=30000
-DB_STATEMENT_TIMEOUT_MS=60000
-```
-
-### 2. set up the database
+### 1. set up the database
 
 this project uses docker to run a postgresql database. make sure you have docker and docker-compose installed.
 
@@ -91,13 +67,13 @@ this project uses docker to run a postgresql database. make sure you have docker
 docker compose up -d db
 ```
 
-### 3. install dependencies
+### 2. install dependencies
 
 ```bash
 npm install
 ```
 
-### 4. run the development server
+### 3. run the development server
 
 ```bash
 npm run dev
@@ -105,7 +81,7 @@ npm run dev
 
 open [http://localhost:3000](http://localhost:3000)
 
-### 5. logging in
+## credentials
 
 the database is seeded with a default user:
 
