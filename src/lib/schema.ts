@@ -16,6 +16,13 @@ export const dbSchema = {
       recovery_passphrase: "TEXT",
       recovery_passphrase_created_at: "TIMESTAMPTZ",
     },
+    indexes: [
+      {
+        name: "idx_users_created_at",
+        columns: ["created_at"],
+        comment: "Index for user registration chronology queries",
+      },
+    ],
   },
   posts: {
     columns: {
@@ -27,6 +34,24 @@ export const dbSchema = {
       updated_at: "TIMESTAMPTZ DEFAULT NOW()",
       author_id: "UUID NOT NULL REFERENCES users(id)",
     },
+    indexes: [
+      {
+        name: "idx_posts_created_at",
+        columns: ["created_at"],
+        comment:
+          "Critical index for chronological post ordering (ORDER BY created_at DESC)",
+      },
+      {
+        name: "idx_posts_author_id",
+        columns: ["author_id"],
+        comment: "Essential index for JOIN performance with users table",
+      },
+      {
+        name: "idx_posts_updated_at",
+        columns: ["updated_at"],
+        comment: "Index for recently updated posts queries",
+      },
+    ],
   },
   tags: {
     columns: {
@@ -34,6 +59,13 @@ export const dbSchema = {
       name: "TEXT NOT NULL UNIQUE",
       created_at: "TIMESTAMPTZ DEFAULT NOW()",
     },
+    indexes: [
+      {
+        name: "idx_tags_created_at",
+        columns: ["created_at"],
+        comment: "Index for tag creation chronology",
+      },
+    ],
   },
   posts_tags: {
     columns: {
@@ -41,6 +73,19 @@ export const dbSchema = {
       tag_id: "UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE",
     },
     constraints: "PRIMARY KEY (post_id, tag_id)",
+    indexes: [
+      {
+        name: "idx_posts_tags_post_id",
+        columns: ["post_id"],
+        comment:
+          "Index for efficient tag lookups by post (already covered by PK but explicit for clarity)",
+      },
+      {
+        name: "idx_posts_tags_tag_id",
+        columns: ["tag_id"],
+        comment: "Index for efficient post lookups by tag (reverse direction)",
+      },
+    ],
   },
   settings: {
     columns: {
@@ -63,6 +108,18 @@ export const dbSchema = {
       updated_at: "TIMESTAMPTZ DEFAULT NOW()",
     },
     constraints: "UNIQUE(query_name)",
+    indexes: [
+      {
+        name: "idx_query_metrics_total_time",
+        columns: ["total_time"],
+        comment: "Index for sorting queries by total execution time",
+      },
+      {
+        name: "idx_query_metrics_slow_queries",
+        columns: ["slow_queries"],
+        comment: "Index for filtering queries with high slow query counts",
+      },
+    ],
   },
   query_metrics_history: {
     columns: {
@@ -77,5 +134,24 @@ export const dbSchema = {
       flush_timestamp: "TIMESTAMPTZ NOT NULL",
       created_at: "TIMESTAMPTZ DEFAULT NOW()",
     },
+    indexes: [
+      {
+        name: "idx_query_metrics_history_query_name",
+        columns: ["query_name"],
+        comment: "Index for filtering historical metrics by query name",
+      },
+      {
+        name: "idx_query_metrics_history_flush_timestamp",
+        columns: ["flush_timestamp"],
+        comment:
+          "Critical index for time-based filtering (WHERE flush_timestamp > NOW() - INTERVAL)",
+      },
+      {
+        name: "idx_query_metrics_history_query_name_flush_timestamp",
+        columns: ["query_name", "flush_timestamp"],
+        comment:
+          "Composite index for efficient query-specific historical lookups",
+      },
+    ],
   },
 };

@@ -49,6 +49,46 @@ export async function initializeDatabase() {
           await client.query(addColumnQuery);
         }
       }
+
+      // Create indexes if they don't exist
+      if ("indexes" in table && table.indexes) {
+        console.log(`checking for missing indexes on ${tableName}...`);
+
+        for (const index of table.indexes) {
+          const indexName = index.name;
+          const columns = index.columns.map((col) => `"${col}"`).join(", ");
+
+          // Check if index already exists
+          const indexExistsQuery = `
+            SELECT 1 FROM pg_indexes
+            WHERE tablename = '${tableName}'
+            AND indexname = '${indexName}';
+          `;
+
+          const indexExists = await client.query(indexExistsQuery);
+
+          if (indexExists.rows.length === 0) {
+            console.log(
+              `creating index: ${indexName} on ${tableName}(${index.columns.join(", ")})`,
+            );
+
+            const createIndexQuery = `
+              CREATE INDEX IF NOT EXISTS ${indexName}
+              ON ${tableName} (${columns});
+            `;
+
+            await client.query(createIndexQuery);
+
+            // Add comment if provided
+            if (index.comment) {
+              const commentQuery = `
+                COMMENT ON INDEX ${indexName} IS '${index.comment}';
+              `;
+              await client.query(commentQuery);
+            }
+          }
+        }
+      }
     }
   }, "initializeDatabase");
 }
