@@ -1,5 +1,5 @@
 import { Pool, PoolConfig, PoolClient } from "pg";
-import { initializeDatabase } from "./setup";
+import { initializeDatabase, seedDatabase } from "./setup";
 
 // Performance monitoring types
 interface QueryMetrics {
@@ -184,6 +184,7 @@ export async function withDbConnection<T>(
       try {
         isInitializing = true;
         await initializeDatabase();
+        await seedDatabase();
         console.log(
           "Database auto-initialization completed, retrying operation...",
         );

@@ -46,7 +46,10 @@ async function testAutoInitialization() {
 
       console.log("   Missing column detection and recovery: ✅");
     } catch (error) {
-      console.log("   Missing column test result:", error.message);
+      console.log(
+        "   Missing column test result:",
+        error instanceof Error ? error.message : String(error),
+      );
     }
 
     // Final verification that schema is complete
