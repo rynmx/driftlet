@@ -1,11 +1,10 @@
-import { db } from "@/lib/db";
+import { withDbConnection } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 import { dbSchema } from "./schema";
 
 export async function initializeDatabase() {
-  const client = await db.connect();
-  try {
+  return withDbConnection(async (client) => {
     // Enable UUID generation
     await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
 
@@ -30,8 +29,8 @@ export async function initializeDatabase() {
 
       console.log(`checking for missing columns in ${tableName}...`);
       const tableInfoQuery = `
-        SELECT column_name 
-        FROM information_schema.columns 
+        SELECT column_name
+        FROM information_schema.columns
         WHERE table_name = '${tableName}';
       `;
 
@@ -51,14 +50,11 @@ export async function initializeDatabase() {
         }
       }
     }
-  } finally {
-    client.release();
-  }
+  }, "initializeDatabase");
 }
 
 export async function seedDatabase() {
-  const client = await db.connect();
-  try {
+  return withDbConnection(async (client) => {
     const adminUsername = "admin";
     const adminPassword = "password";
 
@@ -104,7 +100,5 @@ export async function seedDatabase() {
       await client.query("INSERT INTO settings (id) VALUES (1)");
       console.log("settings seeded.");
     }
-  } finally {
-    client.release();
-  }
+  }, "seedDatabase");
 }

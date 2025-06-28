@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { db } from "@/lib/db";
+import { withDbConnection } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
@@ -16,27 +16,26 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const client = await db.connect();
         try {
-          const result = await client.query(
-            "SELECT * FROM users WHERE username = $1",
-            [credentials.username],
-          );
-          const user = result.rows[0];
+          return await withDbConnection(async (client) => {
+            const result = await client.query(
+              "SELECT * FROM users WHERE username = $1",
+              [credentials.username],
+            );
+            const user = result.rows[0];
 
-          if (
-            user &&
-            (await bcrypt.compare(credentials.password, user.password))
-          ) {
-            return { id: user.id, name: user.username, email: user.email };
-          } else {
-            return null;
-          }
+            if (
+              user &&
+              (await bcrypt.compare(credentials.password, user.password))
+            ) {
+              return { id: user.id, name: user.username, email: user.email };
+            } else {
+              return null;
+            }
+          }, "auth-login");
         } catch (error) {
           console.error("Authorize error:", error);
           return null;
-        } finally {
-          client.release();
         }
       },
     }),

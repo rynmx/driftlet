@@ -50,4 +50,32 @@ export const dbSchema = {
     },
     constraints: "CONSTRAINT single_row CHECK (id = 1)",
   },
+  query_metrics: {
+    columns: {
+      id: "UUID PRIMARY KEY DEFAULT uuid_generate_v4()",
+      query_name: "TEXT NOT NULL",
+      count: "INTEGER NOT NULL DEFAULT 0",
+      total_time: "INTEGER NOT NULL DEFAULT 0", // milliseconds
+      max_time: "INTEGER NOT NULL DEFAULT 0", // milliseconds
+      min_time: "INTEGER NOT NULL DEFAULT 0", // milliseconds
+      slow_queries: "INTEGER NOT NULL DEFAULT 0", // count of queries > threshold
+      created_at: "TIMESTAMPTZ DEFAULT NOW()",
+      updated_at: "TIMESTAMPTZ DEFAULT NOW()",
+    },
+    constraints: "UNIQUE(query_name)",
+  },
+  query_metrics_history: {
+    columns: {
+      id: "UUID PRIMARY KEY DEFAULT uuid_generate_v4()",
+      query_name: "TEXT NOT NULL",
+      count: "INTEGER NOT NULL",
+      total_time: "INTEGER NOT NULL", // milliseconds
+      avg_time: "INTEGER NOT NULL", // milliseconds
+      max_time: "INTEGER NOT NULL", // milliseconds
+      min_time: "INTEGER NOT NULL", // milliseconds
+      slow_queries: "INTEGER NOT NULL",
+      flush_timestamp: "TIMESTAMPTZ NOT NULL",
+      created_at: "TIMESTAMPTZ DEFAULT NOW()",
+    },
+  },
 };

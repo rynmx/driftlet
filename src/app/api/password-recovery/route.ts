@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { withDbConnection } from "@/lib/db";
 import { verifyPassphrase } from "@/lib/passphrase";
 import bcrypt from "bcryptjs";
 
@@ -22,8 +22,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const client = await db.connect();
-    try {
+    return await withDbConnection(async (client) => {
       // Find the user
       const userResult = await client.query(
         "SELECT id, username, recovery_passphrase, recovery_passphrase_created_at FROM users WHERE username = $1",
@@ -70,9 +69,7 @@ export async function PATCH(req: Request) {
         success: true,
         message: "Password has been reset successfully",
       });
-    } finally {
-      client.release();
-    }
+    });
   } catch (error) {
     console.error("Failed to reset password:", error);
     return NextResponse.json(

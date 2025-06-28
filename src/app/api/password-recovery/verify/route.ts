@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { withDbConnection } from "@/lib/db";
 import { verifyPassphrase } from "@/lib/passphrase";
 
 // Verify recovery credentials without resetting the password
@@ -14,8 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const client = await db.connect();
-    try {
+    return await withDbConnection(async (client) => {
       // Find the user
       const userResult = await client.query(
         "SELECT id, username, recovery_passphrase, recovery_passphrase_created_at FROM users WHERE username = $1",
@@ -53,9 +52,7 @@ export async function POST(req: Request) {
         success: true,
         message: "Credentials verified successfully",
       });
-    } finally {
-      client.release();
-    }
+    });
   } catch (error) {
     console.error("Failed to verify recovery credentials:", error);
     return NextResponse.json(

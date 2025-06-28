@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withDbConnection } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { generatePassphrase, hashPassphrase } from "@/lib/passphrase";
 
@@ -14,8 +14,7 @@ export async function GET() {
 
   try {
     const userId = session.user.id;
-    const client = await db.connect();
-    try {
+    return await withDbConnection(async (client) => {
       // Fetch user-specific settings
       const userResult = await client.query(
         "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon, recovery_passphrase IS NOT NULL as has_recovery_passphrase, recovery_passphrase_created_at FROM users WHERE id = $1",
@@ -45,9 +44,7 @@ export async function GET() {
       };
 
       return NextResponse.json(combinedSettings);
-    } finally {
-      client.release();
-    }
+    });
   } catch (error) {
     console.error("failed to fetch settings:", error);
     return NextResponse.json(
@@ -64,167 +61,174 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const client = await db.connect();
   try {
     const body = await req.json();
     const userId = session.user.id;
 
-    await client.query("BEGIN");
+    return await withDbConnection(async (client) => {
+      try {
+        await client.query("BEGIN");
 
-    // Separate keys for user and settings tables
-    const userKeys = [
-      "name",
-      "bio",
-      "extended_bio",
-      "profile_picture_url",
-      "links",
-      "header_text",
-      "header_icon_url",
-      "show_header_icon",
-    ];
-    const settingsKeys = ["favicon_url", "show_attribution"];
+        // Separate keys for user and settings tables
+        const userKeys = [
+          "name",
+          "bio",
+          "extended_bio",
+          "profile_picture_url",
+          "links",
+          "header_text",
+          "header_icon_url",
+          "show_header_icon",
+        ];
+        const settingsKeys = ["favicon_url", "show_attribution"];
 
-    const userUpdates: { [key: string]: string | boolean | object | null } = {};
-    const settingsUpdates: { [key: string]: string | boolean | object | null } =
-      {};
+        const userUpdates: { [key: string]: string | boolean | object | null } =
+          {};
+        const settingsUpdates: {
+          [key: string]: string | boolean | object | null;
+        } = {};
 
-    for (const key in body) {
-      if (userKeys.includes(key)) {
-        userUpdates[key] = body[key];
-      } else if (settingsKeys.includes(key)) {
-        settingsUpdates[key] = body[key];
-      }
-    }
+        for (const key in body) {
+          if (userKeys.includes(key)) {
+            userUpdates[key] = body[key];
+          } else if (settingsKeys.includes(key)) {
+            settingsUpdates[key] = body[key];
+          }
+        }
 
-    // Handle user-specific updates
-    if (Object.keys(userUpdates).length > 0) {
-      const setClauses = Object.keys(userUpdates)
-        .map((key, i) => `"${key}" = $${i + 1}`)
-        .join(", ");
-      const values = Object.values(userUpdates);
-      await client.query(
-        `UPDATE users SET ${setClauses} WHERE id = $${values.length + 1}`,
-        [...values, userId],
-      );
-    }
-
-    // Handle site-wide settings updates
-    if (Object.keys(settingsUpdates).length > 0) {
-      const setClauses = Object.keys(settingsUpdates)
-        .map((key, i) => `"${key}" = $${i + 1}`)
-        .join(", ");
-      const values = Object.values(settingsUpdates);
-      await client.query(
-        `UPDATE settings SET ${setClauses} WHERE id = 1`,
-        values,
-      );
-    }
-
-    // Handle password, username and recovery passphrase changes
-    const {
-      username,
-      newPassword,
-      currentPassword,
-      generateRecoveryPassphrase,
-    } = body;
-    if (
-      newPassword ||
-      (username && username !== session.user.name) ||
-      generateRecoveryPassphrase
-    ) {
-      const currentUserResult = await client.query(
-        "SELECT * FROM users WHERE id = $1",
-        [userId],
-      );
-      const user = currentUserResult.rows[0];
-
-      let hashedPassword = user.password;
-      if (newPassword) {
-        if (
-          !currentPassword ||
-          !bcrypt.compareSync(currentPassword, user.password)
-        ) {
-          await client.query("ROLLBACK");
-          return NextResponse.json(
-            { error: "invalid current password" },
-            { status: 401 },
+        // Handle user-specific updates
+        if (Object.keys(userUpdates).length > 0) {
+          const setClauses = Object.keys(userUpdates)
+            .map((key, i) => `"${key}" = $${i + 1}`)
+            .join(", ");
+          const values = Object.values(userUpdates);
+          await client.query(
+            `UPDATE users SET ${setClauses} WHERE id = $${values.length + 1}`,
+            [...values, userId],
           );
         }
-        hashedPassword = await bcrypt.hash(newPassword, 12);
-        await client.query("UPDATE users SET password = $1 WHERE id = $2", [
-          hashedPassword,
-          userId,
-        ]);
-      }
 
-      if (username && username !== user.username) {
-        const existingUser = await client.query(
-          "SELECT id FROM users WHERE username = $1 AND id != $2",
-          [username, userId],
-        );
-        if (existingUser.rows.length > 0) {
-          await client.query("ROLLBACK");
-          return NextResponse.json(
-            { error: "username is already taken" },
-            { status: 409 },
+        // Handle site-wide settings updates
+        if (Object.keys(settingsUpdates).length > 0) {
+          const setClauses = Object.keys(settingsUpdates)
+            .map((key, i) => `"${key}" = $${i + 1}`)
+            .join(", ");
+          const values = Object.values(settingsUpdates);
+          await client.query(
+            `UPDATE settings SET ${setClauses} WHERE id = 1`,
+            values,
           );
         }
-        await client.query("UPDATE users SET username = $1 WHERE id = $2", [
+
+        // Handle password, username and recovery passphrase changes
+        const {
           username,
-          userId,
-        ]);
-      }
-
-      if (generateRecoveryPassphrase) {
+          newPassword,
+          currentPassword,
+          generateRecoveryPassphrase,
+        } = body;
         if (
-          !currentPassword ||
-          !bcrypt.compareSync(currentPassword, user.password)
+          newPassword ||
+          (username && username !== session.user.name) ||
+          generateRecoveryPassphrase
         ) {
-          await client.query("ROLLBACK");
-          return NextResponse.json(
-            {
-              error:
-                "current password required to generate recovery passphrase",
-            },
-            { status: 401 },
+          const currentUserResult = await client.query(
+            "SELECT * FROM users WHERE id = $1",
+            [userId],
           );
+          const user = currentUserResult.rows[0];
+
+          let hashedPassword = user.password;
+          if (newPassword) {
+            if (
+              !currentPassword ||
+              !bcrypt.compareSync(currentPassword, user.password)
+            ) {
+              await client.query("ROLLBACK");
+              return NextResponse.json(
+                { error: "invalid current password" },
+                { status: 401 },
+              );
+            }
+            hashedPassword = await bcrypt.hash(newPassword, 12);
+            await client.query("UPDATE users SET password = $1 WHERE id = $2", [
+              hashedPassword,
+              userId,
+            ]);
+          }
+
+          if (username && username !== user.username) {
+            const existingUser = await client.query(
+              "SELECT id FROM users WHERE username = $1 AND id != $2",
+              [username, userId],
+            );
+            if (existingUser.rows.length > 0) {
+              await client.query("ROLLBACK");
+              return NextResponse.json(
+                { error: "username is already taken" },
+                { status: 409 },
+              );
+            }
+            await client.query("UPDATE users SET username = $1 WHERE id = $2", [
+              username,
+              userId,
+            ]);
+          }
+
+          if (generateRecoveryPassphrase) {
+            if (
+              !currentPassword ||
+              !bcrypt.compareSync(currentPassword, user.password)
+            ) {
+              await client.query("ROLLBACK");
+              return NextResponse.json(
+                {
+                  error:
+                    "current password required to generate recovery passphrase",
+                },
+                { status: 401 },
+              );
+            }
+
+            const passphrase = generatePassphrase(18); // 5 words for better security
+            const hashedPassphrase = await hashPassphrase(passphrase);
+
+            await client.query(
+              "UPDATE users SET recovery_passphrase = $1, recovery_passphrase_created_at = NOW() WHERE id = $2",
+              [hashedPassphrase, userId],
+            );
+
+            userUpdates.recovery_passphrase_plain = passphrase;
+          }
         }
 
-        const passphrase = generatePassphrase(18); // 5 words for better security
-        const hashedPassphrase = await hashPassphrase(passphrase);
+        await client.query("COMMIT");
 
-        await client.query(
-          "UPDATE users SET recovery_passphrase = $1, recovery_passphrase_created_at = NOW() WHERE id = $2",
-          [hashedPassphrase, userId],
+        // Fetch the newly updated combined settings to return
+        const updatedUserResult = await client.query(
+          "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon, recovery_passphrase IS NOT NULL as has_recovery_passphrase, recovery_passphrase_created_at FROM users WHERE id = $1",
+          [userId],
+        );
+        const updatedSiteSettingsResult = await client.query(
+          "SELECT favicon_url, show_attribution FROM settings WHERE id = 1",
         );
 
-        userUpdates.recovery_passphrase_plain = passphrase;
+        const combinedSettings = {
+          ...updatedUserResult.rows[0],
+          ...updatedSiteSettingsResult.rows[0],
+          // Include the plain text passphrase in the response if it was generated
+          ...(userUpdates.recovery_passphrase_plain && {
+            recovery_passphrase_plain: userUpdates.recovery_passphrase_plain,
+          }),
+        };
+
+        return NextResponse.json(combinedSettings);
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
       }
-    }
-
-    await client.query("COMMIT");
-
-    // Fetch the newly updated combined settings to return
-    const updatedUserResult = await client.query(
-      "SELECT id, username, name, bio, extended_bio, profile_picture_url, links, header_text, header_icon_url, show_header_icon, recovery_passphrase IS NOT NULL as has_recovery_passphrase, recovery_passphrase_created_at FROM users WHERE id = $1",
-      [userId],
-    );
-    const updatedSiteSettingsResult = await client.query(
-      "SELECT favicon_url, show_attribution FROM settings WHERE id = 1",
-    );
-
-    const combinedSettings = {
-      ...updatedUserResult.rows[0],
-      ...updatedSiteSettingsResult.rows[0],
-      // Include the plain text passphrase in the response if it was generated
-      ...(userUpdates.recovery_passphrase_plain && {
-        recovery_passphrase_plain: userUpdates.recovery_passphrase_plain,
-      }),
-    };
-
-    return NextResponse.json(combinedSettings);
+    });
   } catch (error) {
-    await client.query("ROLLBACK");
     console.error("failed to update settings:", error);
     if (
       error instanceof Error &&
@@ -239,7 +243,5 @@ export async function PATCH(req: Request) {
       { error: "internal server error" },
       { status: 500 },
     );
-  } finally {
-    client.release();
   }
 }

@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { withDbConnection, withDbTransaction } from "./db";
 import { PoolClient } from "pg";
 
 export interface Tag {
@@ -22,10 +22,10 @@ export interface Post {
 }
 
 export async function getPosts(tagNames?: string | string[]): Promise<Post[]> {
-  const client = await db.connect();
-  try {
+  const queryName = tagNames ? "getPosts-filtered" : "getPosts-all";
+  return withDbConnection(async (client) => {
     let query = `
-      SELECT 
+      SELECT
         p.*,
         json_build_object('name', u.name) as author,
         (SELECT COALESCE(json_agg(t.* ORDER BY t.name) FILTER (WHERE t.id IS NOT NULL), '[]'::json)
@@ -61,17 +61,14 @@ export async function getPosts(tagNames?: string | string[]): Promise<Post[]> {
 
     const result = await client.query(query, queryParams);
     return result.rows;
-  } finally {
-    client.release();
-  }
+  }, queryName);
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
-  const client = await db.connect();
-  try {
+  return withDbConnection(async (client) => {
     const result = await client.query(
       `
-      SELECT 
+      SELECT
         p.*,
         json_build_object('name', u.name) as author,
         (SELECT COALESCE(json_agg(t.* ORDER BY t.name) FILTER (WHERE t.id IS NOT NULL), '[]'::json)
@@ -85,9 +82,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
       [slug],
     );
     return result.rows[0] || null;
-  } finally {
-    client.release();
-  }
+  }, "getPostBySlug");
 }
 
 export interface PostSummary {
@@ -100,13 +95,12 @@ export interface PostSummary {
 export async function getLatestPosts(
   limit: number = 3,
 ): Promise<PostSummary[]> {
-  const client = await db.connect();
-  try {
+  return withDbConnection(async (client) => {
     const result = await client.query(
       `
-      SELECT 
-        p.slug, 
-        p.title, 
+      SELECT
+        p.slug,
+        p.title,
         p.created_at,
         (SELECT COALESCE(json_agg(t.* ORDER BY t.name) FILTER (WHERE t.id IS NOT NULL), '[]'::json)
          FROM tags t
@@ -119,18 +113,15 @@ export async function getLatestPosts(
       [limit],
     );
     return result.rows;
-  } finally {
-    client.release();
-  }
+  }, "getLatestPosts");
 }
 
 export async function getTags(): Promise<Tag[]> {
-  const client = await db.connect();
-  try {
+  return withDbConnection(async (client) => {
     const result = await client.query(`
-      SELECT 
-        t.id, 
-        t.name, 
+      SELECT
+        t.id,
+        t.name,
         COUNT(pt.post_id) as post_count
       FROM tags t
       LEFT JOIN posts_tags pt ON t.id = pt.tag_id
@@ -138,9 +129,7 @@ export async function getTags(): Promise<Tag[]> {
       ORDER BY t.name
     `);
     return result.rows;
-  } finally {
-    client.release();
-  }
+  }, "getTags");
 }
 
 async function upsertTags(
@@ -170,10 +159,7 @@ export async function createPost(
   author_id: string,
   tags: string[],
 ): Promise<Post> {
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-
+  return withDbTransaction(async (client) => {
     const insertedPost = await client.query(
       "INSERT INTO posts (slug, title, content, author_id) VALUES ($1, $2, $3, $4) RETURNING *",
       [slug, title, content, author_id],
@@ -191,17 +177,10 @@ export async function createPost(
       await client.query(postsTagsQuery, [newPost.id, ...tagIds]);
     }
 
-    await client.query("COMMIT");
-
     const post = await getPostBySlug(newPost.slug);
     if (!post) throw new Error("Failed to create post");
     return post;
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
-  }
+  }, "createPost");
 }
 
 export async function updatePost(
@@ -211,10 +190,7 @@ export async function updatePost(
   content: string,
   tags: string[],
 ): Promise<Post> {
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-
+  return withDbTransaction(async (client) => {
     const updatedPost = await client.query(
       "UPDATE posts SET slug = $1, title = $2, content = $3, updated_at = NOW() WHERE id = $4 RETURNING *",
       [slug, title, content, id],
@@ -234,24 +210,14 @@ export async function updatePost(
       await client.query(postsTagsQuery, [newPost.id, ...tagIds]);
     }
 
-    await client.query("COMMIT");
-
     const post = await getPostBySlug(newPost.slug);
     if (!post) throw new Error("Failed to update post");
     return post;
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
-  }
+  }, "updatePost");
 }
 
 export async function deletePost(slug: string, userId: string): Promise<void> {
-  const client = await db.connect();
-  try {
-    await client.query("BEGIN");
-
+  return withDbTransaction(async (client) => {
     const postCheck = await client.query(
       "SELECT id, author_id FROM posts WHERE slug = $1",
       [slug],
@@ -266,23 +232,13 @@ export async function deletePost(slug: string, userId: string): Promise<void> {
     }
 
     await client.query("DELETE FROM posts WHERE slug = $1", [slug]);
-
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
-  }
+  }, "deletePost");
 }
 
 export async function deleteTag(id: string): Promise<void> {
-  const client = await db.connect();
-  try {
+  return withDbConnection(async (client) => {
     await client.query("DELETE FROM tags WHERE id = $1", [id]);
-  } finally {
-    client.release();
-  }
+  }, "deleteTag");
 }
 
 export interface AdjacentPost {
@@ -295,8 +251,7 @@ export async function getAdjacentPosts(currentSlug: string): Promise<{
   previous: AdjacentPost | null;
   next: AdjacentPost | null;
 }> {
-  const client = await db.connect();
-  try {
+  return withDbConnection(async (client) => {
     // First get the current post's ID
     const currentPostResult = await client.query(
       `SELECT id FROM posts WHERE slug = $1`,
@@ -311,20 +266,20 @@ export async function getAdjacentPosts(currentSlug: string): Promise<{
 
     // Get the previous post (with ID less than current)
     const previousResult = await client.query(
-      `SELECT slug, title, created_at 
-       FROM posts 
-       WHERE id < $1 
-       ORDER BY id DESC 
+      `SELECT slug, title, created_at
+       FROM posts
+       WHERE id < $1
+       ORDER BY id DESC
        LIMIT 1`,
       [currentPostId],
     );
 
     // Get the next post (with ID greater than current)
     const nextResult = await client.query(
-      `SELECT slug, title, created_at 
-       FROM posts 
-       WHERE id > $1 
-       ORDER BY id ASC 
+      `SELECT slug, title, created_at
+       FROM posts
+       WHERE id > $1
+       ORDER BY id ASC
        LIMIT 1`,
       [currentPostId],
     );
@@ -333,7 +288,5 @@ export async function getAdjacentPosts(currentSlug: string): Promise<{
       previous: previousResult.rows[0] || null,
       next: nextResult.rows[0] || null,
     };
-  } finally {
-    client.release();
-  }
+  }, "getAdjacentPosts");
 }
