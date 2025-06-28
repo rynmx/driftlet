@@ -176,10 +176,7 @@ export async function createPost(
       `;
       await client.query(postsTagsQuery, [newPost.id, ...tagIds]);
     }
-
-    const post = await getPostBySlug(newPost.slug);
-    if (!post) throw new Error("Failed to create post");
-    return post;
+    return newPost;
   }, "createPost");
 }
 
@@ -209,10 +206,7 @@ export async function updatePost(
       `;
       await client.query(postsTagsQuery, [newPost.id, ...tagIds]);
     }
-
-    const post = await getPostBySlug(newPost.slug);
-    if (!post) throw new Error("Failed to update post");
-    return post;
+    return newPost;
   }, "updatePost");
 }
 
