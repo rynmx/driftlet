@@ -15,10 +15,18 @@ a minimalist, modern, and performant blogging and portfolio platform.
 - [x] basic account stuff
 - [x] basic home page stuff
 - [x] links
-- [ ] page view tracker
 - [x] page tags
-- [ ] basic theming
 - [x] an actual icon for the project
+- [ ] performance optimizations
+- [ ] basic theming
+- [ ] page view tracker
+- [ ] export markdown/data
+- [ ] import markdown on upload
+- [ ] maybe a wysiwyg editor but i really like the simplicity of not having one rn
+- [ ] maybe image formatting or just wrap them to take the whole space since its max-w-3xl
+- [ ] maybe rss if i can figure that out
+- [ ] maybe more management utilities
+- [ ] better seo?
 
 ## configuration
 
