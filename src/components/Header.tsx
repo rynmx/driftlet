@@ -36,10 +36,10 @@ const Header = async () => {
             home
           </Link>
           <Link
-            href="/blog"
+            href="/post"
             className="font-medium text-black dark:text-white hover:underline"
           >
-            blog
+            posts
           </Link>
           <AuthNavLinks />
         </nav>

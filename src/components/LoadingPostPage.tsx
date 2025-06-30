@@ -1,9 +1,9 @@
-export default function LoadingBlogPage() {
+export default function LoadingPostPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-8 sm:p-24">
       <div className="w-full max-w-2xl">
         <h1 className="text-3xl font-bold mb-4 text-center sm:text-left text-black dark:text-white">
-          blog
+          posts
         </h1>
 
         {/* Loading skeleton for tag filter */}

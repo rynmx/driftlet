@@ -100,11 +100,11 @@ export default function MobileMenu() {
             home
           </Link>
           <Link
-            href="/blog"
+            href="/post"
             className="font-medium text-black dark:text-white hover:underline"
             onClick={() => setIsOpen(false)}
           >
-            blog
+            posts
           </Link>
 
           {session ? (

@@ -1,6 +1,6 @@
 import { getPosts, getTags } from "@/lib/posts";
-import BlogPageClient from "@/components/BlogPageClient";
-import LoadingBlogPage from "@/components/LoadingBlogPage";
+import PostPageClient from "@/components/PostPageClient";
+import LoadingPostPage from "@/components/LoadingPostPage";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "blog",
 };
 
-export default async function BlogPage(props: {
+export default async function PostPage(props: {
   searchParams: Promise<{ tag?: string | string[] }>;
 }) {
   const searchParams = await props.searchParams;
@@ -18,8 +18,8 @@ export default async function BlogPage(props: {
   const allTags = await getTags();
 
   return (
-    <Suspense fallback={<LoadingBlogPage />}>
-      <BlogPageClient posts={posts} allTags={allTags} />
+    <Suspense fallback={<LoadingPostPage />}>
+      <PostPageClient posts={posts} allTags={allTags} />
     </Suspense>
   );
 }

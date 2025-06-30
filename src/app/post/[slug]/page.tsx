@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { PostTagList } from "@/components/PostTagList";
-import BlogPostNavigation from "@/components/BlogPostNavigation";
+import PostPageNavigation from "@/components/PostPageNavigation";
 import AuthorProfileCard from "@/components/AuthorProfileCard";
 import { getPublicProfile } from "@/lib/user";
 import type { Metadata } from "next";
@@ -30,7 +30,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function BlogPostPage({
+export default async function PostPage({
   params: paramsPromise,
 }: {
   params: Promise<{ slug: string }>;
@@ -99,8 +99,8 @@ export default async function BlogPostPage({
         {/* Author Profile */}
         {profile && <AuthorProfileCard profile={profile} />}
 
-        {/* Blog post navigation */}
-        <BlogPostNavigation
+        {/* Post navigation */}
+        <PostPageNavigation
           previous={adjacentPosts.previous}
           next={adjacentPosts.next}
         />

@@ -111,7 +111,7 @@ export default async function Home() {
               {latestPosts.map((post) => (
                 <Link
                   key={post.slug}
-                  href={`/blog/${post.slug}`}
+                  href={`/post/${post.slug}`}
                   className="group"
                 >
                   <h3 className="font-semibold text-black dark:text-white group-hover:underline">

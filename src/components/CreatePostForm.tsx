@@ -50,7 +50,7 @@ const CreatePostForm = () => {
       });
 
       if (response.ok) {
-        router.push("/blog"); // Redirect to blog index on success
+        router.push("/post"); // Redirect to post index on success
       } else {
         const data = await response.json();
         setError(data.error || "an unknown error occurred.");

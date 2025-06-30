@@ -18,7 +18,7 @@ export const PostTagList = ({ tags }: { tags: Tag[] }) => {
       {visibleTags.map((tag) => (
         <Link
           key={tag.id}
-          href={`/blog?tag=${tag.name}`}
+          href={`/post?tag=${tag.name}`}
           className="text-sm text-gray-500 dark:text-gray-400 transition-colors hover:text-black dark:hover:text-white"
         >
           #{tag.name}

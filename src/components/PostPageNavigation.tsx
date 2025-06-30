@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AdjacentPost } from "@/lib/posts";
 
-export default function BlogPostNavigation({
+export default function PostPageNavigation({
   previous,
   next,
 }: {
@@ -34,7 +34,7 @@ export default function BlogPostNavigation({
               previous:
             </span>
             <Link
-              href={`/blog/${previous.slug}`}
+              href={`/post/${previous.slug}`}
               className="font-medium text-black dark:text-white hover:underline line-clamp-2"
               title={previous.title}
             >
@@ -57,7 +57,7 @@ export default function BlogPostNavigation({
               next:
             </span>
             <Link
-              href={`/blog/${next.slug}`}
+              href={`/post/${next.slug}`}
               className="font-medium text-black dark:text-white hover:underline line-clamp-2"
               title={next.title}
             >

@@ -35,7 +35,7 @@ const EditPostForm = ({ post }: { post: Post }) => {
       });
 
       if (response.ok) {
-        router.push(`/blog/${newSlug}`);
+        router.push(`/post/${newSlug}`);
       } else {
         const data = await response.json();
         setError(data.error || "an unknown error occurred.");
@@ -55,7 +55,7 @@ const EditPostForm = ({ post }: { post: Post }) => {
           method: "DELETE",
         });
         if (response.ok) {
-          router.push("/blog");
+          router.push("/post");
         } else {
           const data = await response.json();
           setError(data.error || "failed to delete post.");

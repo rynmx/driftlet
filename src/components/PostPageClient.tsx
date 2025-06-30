@@ -14,7 +14,7 @@ const createExcerpt = (text: string, length = 150) => {
   return text.substring(0, length) + "...";
 };
 
-export default function BlogPageClient({
+export default function PostPageClient({
   posts,
   allTags,
 }: {
@@ -31,7 +31,7 @@ export default function BlogPageClient({
     <main className="flex min-h-screen flex-col items-center p-8 sm:p-24">
       <div className="w-full max-w-2xl">
         <h1 className="text-3xl font-bold mb-4 text-center sm:text-left text-black dark:text-white">
-          blog
+          posts
         </h1>
 
         <div className="mb-8">
@@ -42,7 +42,7 @@ export default function BlogPageClient({
           {posts.length > 0 ? (
             posts.map((post, index) => (
               <div key={post.id}>
-                <Link href={`/blog/${post.slug}`} className="block py-6 group">
+                <Link href={`/post/${post.slug}`} className="block py-6 group">
                   <h2 className="text-xl font-bold text-black dark:text-white group-hover:underline truncate">
                     {post.title}
                   </h2>
